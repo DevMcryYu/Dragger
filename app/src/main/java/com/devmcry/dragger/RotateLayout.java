@@ -106,11 +106,16 @@ public class RotateLayout extends ViewGroup {
         super.onFinishInflate();
         if (getId() == R.id.test) {
             ValueAnimator animator = ValueAnimator.ofFloat(0, 360f);
-            animator.setDuration(10000);
+            animator.setDuration(5000);
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
-                    setAngle((float) animation.getAnimatedValue());
+                    float value = (float) animation.getAnimatedValue();
+                    LayoutParams lp = getChildAt(0).getLayoutParams();
+                    lp.width += 1;
+                    lp.height += 1;
+                    getChildAt(0).setLayoutParams(lp);
+                    setAngle(value);
                 }
             });
             animator.start();
