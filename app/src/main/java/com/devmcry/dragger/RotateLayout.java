@@ -1,19 +1,16 @@
 package com.devmcry.dragger;
 
 
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.widget.Toast;
 
 import static android.view.View.MeasureSpec.UNSPECIFIED;
 import static java.lang.Math.PI;
@@ -28,10 +25,7 @@ import static java.lang.Math.sin;
  * This layout is supposed to have only one view. Behaviour of the views after the first one
  * is not defined.
  * <p>
- * XML attributes
- * See com.github.rongi.rotate_layout.R.styleable#RotateLayout RotateLayout Attributes,
  */
-
 
 /**
  * @author : DevMcryYu
@@ -64,9 +58,7 @@ public class RotateLayout extends ViewGroup {
 
     public RotateLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs);
-
         angle = 0f;
-
         setWillNotDraw(false);
     }
 
@@ -92,7 +84,7 @@ public class RotateLayout extends ViewGroup {
     /**
      * Returns this layout's child or null if there is no any
      */
-    public View getView() {
+    public View getContentView() {
         if (getChildCount() > 0) {
             return getChildAt(0);
         } else {
@@ -100,39 +92,16 @@ public class RotateLayout extends ViewGroup {
         }
     }
 
-    //test
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        if (getId() == R.id.test) {
-            ValueAnimator animator = ValueAnimator.ofFloat(0, 360f);
-            animator.setDuration(5000);
-            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    float value = (float) animation.getAnimatedValue();
-                    LayoutParams lp = getChildAt(0).getLayoutParams();
-                    lp.width += 1;
-                    lp.height += 1;
-                    getChildAt(0).setLayoutParams(lp);
-                    setAngle(value);
-                }
-            });
-            animator.start();
-        }
-        getChildAt(0).setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                RotateLayout.this.bringToFront();
-                Toast.makeText(getContext(), "click", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-    //test
+//    @Override
+//    public void addView(View child, int index, LayoutParams params) {
+//        if (getChildCount() == 0) {
+//            super.addView(child, index, params);
+//        }
+//    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        final View child = getView();
+        final View child = getContentView();
         if (child != null) {
             if ((int) abs(angle % 180) == 90) {
                 //noinspection SuspiciousNameCombination
@@ -171,13 +140,13 @@ public class RotateLayout extends ViewGroup {
             final RectF layoutRect = tempRectF1;
             layoutRect.set(0, 0, layoutWidth, layoutHeight);
             final RectF layoutRectRotated = tempRectF2;
-            rotateMatrix.setRotate(angle, layoutRect.centerX(), layoutRect.centerY());
+            rotateMatrix.setRotate(-angle, layoutRect.centerX(), layoutRect.centerY());
             rotateMatrix.mapRect(layoutRectRotated, layoutRect);
             layoutRectRotated.round(viewRectRotated);
             angleChanged = false;
         }
 
-        final View child = getView();
+        final View child = getContentView();
         if (child != null) {
             int childLeft = (layoutWidth - child.getMeasuredWidth()) / 2;
             int childTop = (layoutHeight - child.getMeasuredHeight()) / 2;
@@ -190,7 +159,7 @@ public class RotateLayout extends ViewGroup {
     @Override
     protected void dispatchDraw(Canvas canvas) {
         canvas.save();
-        canvas.rotate(-angle, getWidth() / 2f, getHeight() / 2f);
+        canvas.rotate(angle, getWidth() / 2f, getHeight() / 2f);
         super.dispatchDraw(canvas);
         canvas.restore();
     }
