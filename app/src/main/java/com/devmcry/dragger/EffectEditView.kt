@@ -6,10 +6,13 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.core.view.updateLayoutParams
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 /**
  *  @author : DevMcryYu
@@ -51,6 +54,29 @@ class EffectEditView @JvmOverloads constructor(
         strokeWidth = 2f
     }
 
+    private val scaleGestureDetector by lazy {
+        ScaleGestureDetector(context,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    val preSpan = detector.previousSpan
+                    val curSpan = detector.currentSpan
+                    val scale = (curSpan / preSpan)
+                    Log.d("===", "$this scale $scale")
+                    val width = contentView.layoutParams.width
+                    val height = contentView.layoutParams.height
+                    setSize((width * scale).roundToInt(), (height * scale).roundToInt())
+                    return true
+                }
+
+                override fun onScaleEnd(detector: ScaleGestureDetector?) {
+                }
+
+                override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean = true
+            }).apply {
+            isQuickScaleEnabled = false
+        }
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         kotlin.runCatching {
@@ -88,6 +114,7 @@ class EffectEditView @JvmOverloads constructor(
     //test
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
+        scaleGestureDetector.onTouchEvent(event)
         return true
     }
 
