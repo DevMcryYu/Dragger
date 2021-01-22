@@ -18,8 +18,8 @@
 
         <ImageView
             android:id="@+id/testImage1"
-            android:layout_width="96dp"
-            android:layout_height="424dp"
+            android:layout_width="256dp"
+            android:layout_height="256dp"
             android:src="@color/teal_200" />
 
     </com.devmcry.dragger.EffectEditView>
@@ -37,7 +37,7 @@
         <ImageView
             android:id="@+id/testImage2"
             android:layout_width="96dp"
-            android:layout_height="424dp"
+            android:layout_height="192dp"
             android:src="@color/black" />
 
     </com.devmcry.dragger.EffectEditView>

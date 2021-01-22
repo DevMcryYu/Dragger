@@ -68,16 +68,18 @@ class EffectEditView @JvmOverloads constructor(
     //test
     override fun onFinishInflate() {
         super.onFinishInflate()
-        if (id == R.id.test) {
-            val animator = ValueAnimator.ofFloat(0f, 45f)
-            animator.duration = 1000
-            animator.addUpdateListener { animation ->
-                val value = animation.animatedValue as Float
-//                setSize(contentView.layoutParams.width - 2, contentView.layoutParams.height - 10)
-                angle = value
-            }
-            animator.start()
+        val animator = if (id == R.id.test) {
+            ValueAnimator.ofFloat(0f, 135f)
+        } else {
+            ValueAnimator.ofFloat(0f, -75f)
         }
+        animator.duration = 1000
+        animator.addUpdateListener { animation ->
+            val value = animation.animatedValue as Float
+//            setSize(contentView.layoutParams.width - 2, contentView.layoutParams.height - 10)
+            angle = value
+        }
+        animator.start()
         contentView.setOnClickListener {
             this.bringToFront()
             Toast.makeText(context, "click", Toast.LENGTH_SHORT).show()
