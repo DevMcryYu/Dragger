@@ -61,7 +61,7 @@ class EffectEditView @JvmOverloads constructor(
                     val preSpan = detector.previousSpan
                     val curSpan = detector.currentSpan
                     val scale = (curSpan / preSpan)
-                    Log.d("===", "$this scale $scale")
+                    Log.d("===", "${this@EffectEditView.id} scale $scale")
                     val width = contentView.layoutParams.width
                     val height = contentView.layoutParams.height
                     setSize((width * scale).roundToInt(), (height * scale).roundToInt())
@@ -75,6 +75,19 @@ class EffectEditView @JvmOverloads constructor(
             }).apply {
             isQuickScaleEnabled = false
         }
+    }
+
+    private val rotationGestureDetector by lazy {
+        RotationGestureDetector(object :
+            RotationGestureDetector.SimpleOnRotationGestureListener() {
+            override fun onRotation(rotationDetector: RotationGestureDetector?): Boolean {
+                rotationDetector?.angle?.let { delta ->
+                    Log.d("===", "${this@EffectEditView.id} rotate $delta")
+                    angle += delta
+                }
+                return super.onRotation(rotationDetector)
+            }
+        })
     }
 
     override fun onAttachedToWindow() {
@@ -102,19 +115,15 @@ class EffectEditView @JvmOverloads constructor(
         animator.duration = 1000
         animator.addUpdateListener { animation ->
             val value = animation.animatedValue as Float
-//            setSize(contentView.layoutParams.width - 2, contentView.layoutParams.height - 10)
             angle = value
         }
         animator.start()
-        contentView.setOnClickListener {
-            this.bringToFront()
-            Toast.makeText(context, "click", Toast.LENGTH_SHORT).show()
-        }
     }
     //test
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleGestureDetector.onTouchEvent(event)
+        rotationGestureDetector.onTouchEvent(event)
         return true
     }
 
@@ -151,7 +160,7 @@ class EffectEditView @JvmOverloads constructor(
             val distance = calculateDistance(touchPoint, point)
             if (distance < radius) {
                 result = true
-                Log.d("===", "${this.id} ${editButtonList[index]} touch")
+                Log.d("===", "${this@EffectEditView.id} ${editButtonList[index]} touch")
             }
         }
         return result
@@ -178,7 +187,7 @@ class EffectEditView @JvmOverloads constructor(
         val result = getCross(p1, p2, point) * getCross(p3, p4, point) >= 0 &&
                 getCross(p2, p3, point) * getCross(p4, p1, point) >= 0
         if (result) {
-            Log.d("===", "${this.id} content touch")
+            Log.d("===", "${this@EffectEditView.id} content touch")
         }
         return result
     }

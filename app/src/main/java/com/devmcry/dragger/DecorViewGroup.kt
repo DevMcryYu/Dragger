@@ -19,8 +19,8 @@ class DecorViewGroup @JvmOverloads constructor(
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
     private var editingView: EffectEditView? = null
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when (event?.actionMasked) {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
             MotionEvent.ACTION_UP -> {
                 editingView = null
             }
