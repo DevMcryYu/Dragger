@@ -3,7 +3,6 @@ package com.devmcry.dragger
 import android.content.Context
 import android.graphics.Point
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.children
@@ -18,20 +17,39 @@ class DecorViewGroup @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : ConstraintLayout(context, attrs, defStyleAttr) {
+    private var editingView: EffectEditView? = null
 
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        when (event?.actionMasked) {
+            MotionEvent.ACTION_UP -> {
+                editingView = null
+            }
+        }
+        if (editingView != null) {
+            editingView?.onTouchEvent(event)
+        }
+        return true
+    }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            children.iterator().forEach {
-                if (it is EffectEditView) {
-                    val centerPoint =
-                        Point(it.left + it.measuredWidth / 2, it.top + it.measuredHeight / 2)
-                    if (it.tryInterceptTouchEvent(ev, centerPoint)) {
-                        return true
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                var captured = false
+                children.toList().reversed().forEach {
+                    if (it is EffectEditView) {
+                        val centerPoint =
+                            Point(it.left + it.measuredWidth / 2, it.top + it.measuredHeight / 2)
+                        if (!captured && it.tryInterceptTouchEvent(ev, centerPoint)) {
+                            captured = true
+                            it.editing = true
+                            editingView = it
+                        } else {
+                            it.editing = false
+                        }
                     }
                 }
             }
         }
-        return super.onInterceptTouchEvent(ev)
+        return true
     }
 }

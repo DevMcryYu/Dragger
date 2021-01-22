@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/material_on_background_emphasis_high_type"
     tools:context=".FirstFragment">
 
     <com.devmcry.dragger.EffectEditView

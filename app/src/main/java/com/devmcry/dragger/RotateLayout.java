@@ -81,6 +81,15 @@ public class RotateLayout extends ViewGroup {
         }
     }
 
+    public void setSize(int width, int height) {
+        LayoutParams lp = getContentView().getLayoutParams();
+        lp.width = width;
+        lp.height = height;
+        getContentView().setLayoutParams(lp);
+        requestLayout();
+        invalidate();
+    }
+
     /**
      * Returns this layout's child or null if there is no any
      */
@@ -91,13 +100,6 @@ public class RotateLayout extends ViewGroup {
             return null;
         }
     }
-
-//    @Override
-//    public void addView(View child, int index, LayoutParams params) {
-//        if (getChildCount() == 0) {
-//            super.addView(child, index, params);
-//        }
-//    }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {

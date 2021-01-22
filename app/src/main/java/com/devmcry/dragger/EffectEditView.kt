@@ -2,15 +2,13 @@ package com.devmcry.dragger
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Point
+import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.updateLayoutParams
 import kotlin.math.hypot
 
 /**
@@ -23,7 +21,12 @@ class EffectEditView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : RotateLayout(context, attrs, defStyleAttr) {
-    val radius = 96
+    private val radius = 36
+    var editing = false
+        set(value) {
+            field = value
+            invalidate()
+        }
     private val editButtonList: List<EditType> by lazy {
         listOf(
             EditType.Delete,
@@ -33,17 +36,19 @@ class EffectEditView @JvmOverloads constructor(
         )
     }
 
-    private val diagonal: Int
-        get() = hypot(
-            measuredWidth.toFloat(),
-            measuredHeight.toFloat()
-        ).toInt()
+    private val centerPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
 
-    val centerPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
-
-    val paint: Paint = Paint().apply {
+    private val paint: Paint = Paint().apply {
         color = Color.RED
         strokeWidth = 1f
+    }
+
+    private val linePath = Path()
+    private val linePaint: Paint = Paint().apply {
+        color = Color.WHITE
+        isAntiAlias = true
+        style = Paint.Style.STROKE
+        strokeWidth = 2f
     }
 
     override fun onAttachedToWindow() {
@@ -68,10 +73,7 @@ class EffectEditView @JvmOverloads constructor(
             animator.duration = 1000
             animator.addUpdateListener { animation ->
                 val value = animation.animatedValue as Float
-//                val lp = view.layoutParams
-//                lp.width += 1
-//                lp.height += 1
-//                view.layoutParams = lp
+//                setSize(contentView.layoutParams.width - 2, contentView.layoutParams.height - 10)
                 angle = value
             }
             animator.start()
@@ -84,59 +86,99 @@ class EffectEditView @JvmOverloads constructor(
     //test
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-//        when (event?.actionMasked) {
-//            MotionEvent.ACTION_DOWN -> {
-//                handleEditButtonTouch(event)
-//                return true
-//            }
-//        }
-        return super.onTouchEvent(event)
+        return true
     }
-
 
     override fun dispatchDraw(canvas: Canvas?) {
         super.dispatchDraw(canvas)
-        getEditPoints(centerPoint).forEach {
-            canvas?.drawCircle(it.x.toFloat(), it.y.toFloat(), radius.toFloat(), paint)
+        if (editing) {
+            // draw lines
+            linePath.reset()
+            getEditPoints().forEachIndexed { index, point ->
+                if (index == 0) {
+                    linePath.moveTo(point.x.toFloat(), point.y.toFloat())
+                } else {
+                    linePath.lineTo(point.x.toFloat(), point.y.toFloat())
+                }
+            }
+            linePath.close()
+            canvas?.drawPath(linePath, linePaint)
+            // draw buttons
+            getEditPoints().forEach { point ->
+                canvas?.drawCircle(point.x.toFloat(), point.y.toFloat(), radius.toFloat(), paint)
+            }
         }
     }
 
     fun tryInterceptTouchEvent(event: MotionEvent, centerPoint: Point): Boolean {
+        // edit buttons or content view
+        return isEditButtonUnder(event, centerPoint) || isContentViewUnder(event, centerPoint)
+    }
+
+    private fun isEditButtonUnder(event: MotionEvent, centerPoint: Point): Boolean {
         var result = false
         getEditPoints(centerPoint).forEachIndexed { index, point ->
             val touchPoint = Point(event.x.toInt(), event.y.toInt())
             val distance = calculateDistance(touchPoint, point)
-            Log.d("====", "distance $distance")
             if (distance < radius) {
                 result = true
-                Toast.makeText(context, "${editButtonList[index]} click", Toast.LENGTH_SHORT).show()
+                Log.d("===", "${this.id} ${editButtonList[index]} touch")
             }
         }
         return result
     }
 
+    /**
+     * 只需要判断该点是否在上下两边和左右两边之间即可
+     *   p1            p2
+     *    ┏━━━━━━━━━━━┓
+     *    ┃           ┃   ● p
+     *    ┃           ┃
+     *    ┗━━━━━━━━━━━┛
+     *   p4            p3
+     *
+     * (p1 p2 X p1 p ) * (p3 p4 X p3 p)  >= 0  && (p2 p3 X p2 p ) * (p4 p1 X p4 p) >= 0
+     */
+    private fun isContentViewUnder(event: MotionEvent, centerPoint: Point): Boolean {
+        fun getCross(firstPoint: Point, secondPoint: Point, targetPoint: Point): Float {
+            return 1f * (secondPoint.x - firstPoint.x) * (targetPoint.y - firstPoint.y) - 1f * (targetPoint.x - firstPoint.x) * (secondPoint.y - firstPoint.y)
+        }
 
-    fun getEditPoints(centerPoint: Point): List<Point> {
+        val point = Point(event.x.toInt(), event.y.toInt())
+        val (p1, p2, p3, p4) = getEditPoints(centerPoint)
+        val result = getCross(p1, p2, point) * getCross(p3, p4, point) >= 0 &&
+                getCross(p2, p3, point) * getCross(p4, p1, point) >= 0
+        if (result) {
+            Log.d("===", "${this.id} content touch")
+        }
+        return result
+    }
+
+    private fun getEditPoints(centerPoint: Point = this.centerPoint): List<Point> {
         return editButtonList.map {
             when (it) {
+                // top left
                 EditType.Delete -> {
                     Point(
                         centerPoint.x - contentView.measuredWidth / 2,
                         centerPoint.y - contentView.measuredHeight / 2
                     )
                 }
+                // top right
                 EditType.Edit -> {
                     Point(
                         centerPoint.x + contentView.measuredWidth / 2,
                         centerPoint.y - contentView.measuredHeight / 2
                     )
                 }
+                // bottom right
                 EditType.Adjust -> {
                     Point(
                         centerPoint.x + contentView.measuredWidth / 2,
                         centerPoint.y + contentView.measuredHeight / 2
                     )
                 }
+                // bottom left
                 EditType.Custom -> {
                     Point(
                         centerPoint.x - contentView.measuredWidth / 2,
@@ -149,21 +191,7 @@ class EffectEditView @JvmOverloads constructor(
         }
     }
 
-    private fun handleEditButtonTouch(event: MotionEvent) {
-        val touchPoint = Point(event.x.toInt(), event.y.toInt())
-        var editType: EditType? = null
-        getEditPoints(centerPoint).forEachIndexed { index, point ->
-            val dst = calculateDistance(touchPoint, point)
-            if (dst < radius) {
-                editType = editButtonList[index]
-            }
-        }
-        if (editType != null) {
-            Toast.makeText(context, "${editType?.name} clicked", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    fun calculateDistance(touchPoint: Point, targetPoint: Point): Int {
+    private fun calculateDistance(touchPoint: Point, targetPoint: Point): Int {
         return hypot(
             touchPoint.x.toFloat() - targetPoint.x.toFloat(),
             touchPoint.y.toFloat() - targetPoint.y.toFloat()
