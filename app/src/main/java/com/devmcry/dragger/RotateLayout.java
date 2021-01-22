@@ -90,6 +90,13 @@ public class RotateLayout extends ViewGroup {
         invalidate();
     }
 
+    public void setScale(float scale) {
+        LayoutParams lp = getContentView().getLayoutParams();
+        int width = Math.round(lp.width * scale);
+        int height = Math.round(lp.height * scale);
+        setSize(width, height);
+    }
+
     /**
      * Returns this layout's child or null if there is no any
      */

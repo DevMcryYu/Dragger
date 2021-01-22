@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Point
 import android.util.AttributeSet
 import android.view.MotionEvent
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.widget.FrameLayout
 import androidx.core.view.children
 
 /**
@@ -16,8 +16,14 @@ class DecorViewGroup @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : ConstraintLayout(context, attrs, defStyleAttr) {
+) : FrameLayout(context, attrs, defStyleAttr) {
     private var editingView: EffectEditView? = null
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        children.iterator().forEach {
+            it.layout(it.left, it.top, it.left + it.measuredWidth, it.top + it.measuredHeight)
+        }
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {

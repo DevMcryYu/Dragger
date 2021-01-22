@@ -8,11 +8,8 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.Toast
-import androidx.core.view.updateLayoutParams
+import com.devmcry.dragger.multitouch.MoveGestureDetector
 import kotlin.math.hypot
-import kotlin.math.roundToInt
 
 /**
  *  @author : DevMcryYu
@@ -54,24 +51,25 @@ class EffectEditView @JvmOverloads constructor(
         strokeWidth = 2f
     }
 
+    private val moveGestureDetector by lazy {
+        MoveGestureDetector(context,
+            object : MoveGestureDetector.SimpleOnMoveGestureListener() {
+                override fun onMove(detector: MoveGestureDetector): Boolean {
+                    val d = detector.focusDelta
+                    return super.onMove(detector)
+                }
+            })
+    }
+
     private val scaleGestureDetector by lazy {
         ScaleGestureDetector(context,
             object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
-                    val preSpan = detector.previousSpan
-                    val curSpan = detector.currentSpan
-                    val scale = (curSpan / preSpan)
-                    Log.d("===", "${this@EffectEditView.id} scale $scale")
-                    val width = contentView.layoutParams.width
-                    val height = contentView.layoutParams.height
-                    setSize((width * scale).roundToInt(), (height * scale).roundToInt())
+                    val newScale = (detector.currentSpan / detector.previousSpan)
+                    Log.d("===", "${this@EffectEditView.id} scale $newScale")
+                    setScale(newScale)
                     return true
                 }
-
-                override fun onScaleEnd(detector: ScaleGestureDetector?) {
-                }
-
-                override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean = true
             }).apply {
             isQuickScaleEnabled = false
         }
@@ -80,11 +78,10 @@ class EffectEditView @JvmOverloads constructor(
     private val rotationGestureDetector by lazy {
         RotationGestureDetector(object :
             RotationGestureDetector.SimpleOnRotationGestureListener() {
-            override fun onRotation(rotationDetector: RotationGestureDetector?): Boolean {
-                rotationDetector?.angle?.let { delta ->
-                    Log.d("===", "${this@EffectEditView.id} rotate $delta")
-                    angle += delta
-                }
+            override fun onRotation(rotationDetector: RotationGestureDetector): Boolean {
+                val delta = rotationDetector.angle
+                Log.d("===", "${this@EffectEditView.id} rotate $delta")
+                angle += delta
                 return super.onRotation(rotationDetector)
             }
         })
@@ -122,6 +119,7 @@ class EffectEditView @JvmOverloads constructor(
     //test
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+//        moveGestureDetector.onTouchEvent(event)
         scaleGestureDetector.onTouchEvent(event)
         rotationGestureDetector.onTouchEvent(event)
         return true
