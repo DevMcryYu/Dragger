@@ -51,24 +51,48 @@ class EffectEditView @JvmOverloads constructor(
         strokeWidth = 2f
     }
 
+    var isMoving = false
     private val moveGestureDetector by lazy {
         MoveGestureDetector(context,
             object : MoveGestureDetector.SimpleOnMoveGestureListener() {
                 override fun onMove(detector: MoveGestureDetector): Boolean {
-                    val d = detector.focusDelta
+                    offsetLeftAndRight(detector.focusDelta.x.toInt())
+                    offsetTopAndBottom(detector.focusDelta.y.toInt())
                     return super.onMove(detector)
+                }
+
+                override fun onMoveBegin(detector: MoveGestureDetector?): Boolean {
+                    isMoving = true
+                    return super.onMoveBegin(detector)
+                }
+
+                override fun onMoveEnd(detector: MoveGestureDetector?) {
+                    isMoving = false
+                    super.onMoveEnd(detector)
                 }
             })
     }
 
+    var isScaling = false
     private val scaleGestureDetector by lazy {
-        ScaleGestureDetector(context,
+        ScaleGestureDetector(
+            context,
             object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     val newScale = (detector.currentSpan / detector.previousSpan)
                     Log.d("===", "${this@EffectEditView.id} scale $newScale")
                     setScale(newScale)
                     return true
+                }
+
+                override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+                    isScaling = true
+                    return super.onScaleBegin(detector)
+                }
+
+                override fun onScaleEnd(detector: ScaleGestureDetector?) {
+                    isScaling = false
+                    super.onScaleEnd(detector)
                 }
             }).apply {
             isQuickScaleEnabled = false
@@ -119,10 +143,22 @@ class EffectEditView @JvmOverloads constructor(
     //test
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-//        moveGestureDetector.onTouchEvent(event)
-        scaleGestureDetector.onTouchEvent(event)
-        rotationGestureDetector.onTouchEvent(event)
-        return true
+        return if (editing) {
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                bringToFront()
+            }
+            if (event.pointerCount == 1) {
+                moveGestureDetector.onTouchEvent(event)
+            }
+            scaleGestureDetector.onTouchEvent(event)
+            rotationGestureDetector.onTouchEvent(event)
+            if (event.actionMasked == MotionEvent.ACTION_UP) {
+                Log.d("===", "left: $left top: $top width: $width height: $height")
+            }
+            true
+        } else {
+            false
+        }
     }
 
     override fun dispatchDraw(canvas: Canvas?) {

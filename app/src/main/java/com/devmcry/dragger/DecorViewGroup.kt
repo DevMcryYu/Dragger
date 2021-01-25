@@ -25,37 +25,36 @@ class DecorViewGroup @JvmOverloads constructor(
         }
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.actionMasked) {
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                if (editingView == null) {
+                    var captured = false
+                    children.toList().reversed().forEach {
+                        if (it is EffectEditView) {
+                            val centerPoint =
+                                Point(
+                                    it.left + it.measuredWidth / 2,
+                                    it.top + it.measuredHeight / 2
+                                )
+                            if (!captured && it.tryInterceptTouchEvent(ev, centerPoint)) {
+                                captured = true
+                                it.editing = true
+                                editingView = it
+                            } else {
+                                it.editing = false
+                            }
+                        }
+                    }
+                    if (!captured) {
+                        editingView = null
+                    }
+                }
+            }
             MotionEvent.ACTION_UP -> {
                 editingView = null
             }
         }
-        if (editingView != null) {
-            editingView?.onTouchEvent(event)
-        }
-        return true
-    }
-
-    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                var captured = false
-                children.toList().reversed().forEach {
-                    if (it is EffectEditView) {
-                        val centerPoint =
-                            Point(it.left + it.measuredWidth / 2, it.top + it.measuredHeight / 2)
-                        if (!captured && it.tryInterceptTouchEvent(ev, centerPoint)) {
-                            captured = true
-                            it.editing = true
-                            editingView = it
-                        } else {
-                            it.editing = false
-                        }
-                    }
-                }
-            }
-        }
-        return true
+        return false
     }
 }

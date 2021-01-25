@@ -94,6 +94,8 @@ public class RotateLayout extends ViewGroup {
         LayoutParams lp = getContentView().getLayoutParams();
         int width = Math.round(lp.width * scale);
         int height = Math.round(lp.height * scale);
+        offsetLeftAndRight((lp.width - width) / 2);
+        offsetTopAndBottom((lp.height - height) / 2);
         setSize(width, height);
     }
 
@@ -179,19 +181,19 @@ public class RotateLayout extends ViewGroup {
         return super.invalidateChildInParent(location, dirty);
     }
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        viewTouchPoint[0] = event.getX();
-        viewTouchPoint[1] = event.getY();
-
-        rotateMatrix.mapPoints(childTouchPoint, viewTouchPoint);
-
-        event.setLocation(childTouchPoint[0], childTouchPoint[1]);
-        boolean result = super.dispatchTouchEvent(event);
-        event.setLocation(viewTouchPoint[0], viewTouchPoint[1]);
-
-        return result;
-    }
+//    @Override
+//    public boolean dispatchTouchEvent(MotionEvent event) {
+//        viewTouchPoint[0] = event.getX();
+//        viewTouchPoint[1] = event.getY();
+//
+//        rotateMatrix.mapPoints(childTouchPoint, viewTouchPoint);
+//
+//        event.setLocation(childTouchPoint[0], childTouchPoint[1]);
+//        boolean result = super.dispatchTouchEvent(event);
+//        event.setLocation(viewTouchPoint[0], viewTouchPoint[1]);
+//
+//        return result;
+//    }
 
     /**
      * Circle angle, from 0 to TAU
