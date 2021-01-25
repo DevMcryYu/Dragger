@@ -9,6 +9,8 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ViewGroup
 import com.devmcry.dragger.multitouch.MoveGestureDetector
+import java.lang.Math.toDegrees
+import kotlin.math.atan2
 import kotlin.math.hypot
 
 /**
@@ -21,7 +23,7 @@ class EffectEditView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : RotateLayout(context, attrs, defStyleAttr) {
-    private val radius = 36
+    private val radius = 56
     var editing = false
         set(value) {
             field = value
@@ -35,13 +37,30 @@ class EffectEditView @JvmOverloads constructor(
             EditType.Custom,
         )
     }
+    private var currentEditType: EditType? = null
 
-    private val centerPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
+    private val diagonal: Int
+        get() = hypot(
+            measuredWidth.toFloat(),
+            measuredHeight.toFloat()
+        ).toInt()
+    val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
+    val outerCenterPoint
+        get() = innerCenterPoint.apply {
+            x += left
+            y += top
+        }
 
     private val paint: Paint = Paint().apply {
         color = Color.RED
         strokeWidth = 1f
     }
+
+    private val adjustPaint: Paint = Paint().apply {
+        color = Color.YELLOW
+        strokeWidth = 1f
+    }
+
 
     private val linePath = Path()
     private val linePaint: Paint = Paint().apply {
@@ -142,22 +161,67 @@ class EffectEditView @JvmOverloads constructor(
     }
     //test
 
+    private var centerPoint: Point? = null
+    private val preTouchPoint: Point by lazy { Point(0, 0) }
+    private var preDistance: Int = 0
+    private var preAngle: Float = 0f
+    private val curTouchPoint: Point by lazy { Point(0, 0) }
+    private var curDistance: Int = 0
+    private var curAngle: Float = 0f
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        return if (editing) {
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                bringToFront()
-            }
-            if (event.pointerCount == 1) {
-                moveGestureDetector.onTouchEvent(event)
+        if (editing) {
+//            when (event.actionMasked) {
+//                MotionEvent.ACTION_DOWN -> {
+//                    bringToFront()
+//                    if (currentEditType != null) {
+//                        Log.d("===", "ACTION_DOWN")
+//                        preTouchPoint.x = event.x.toInt()
+//                        preTouchPoint.y = event.y.toInt()
+//                        centerPoint = innerCenterPoint
+//                        preDistance = calculateDistance(preTouchPoint, centerPoint!!)
+//                        preAngle = calculateAngle(preTouchPoint, centerPoint!!)
+//                        Log.d("===", "ACTION_DOWN $preTouchPoint")
+//                    }
+//                }
+//                MotionEvent.ACTION_MOVE -> {
+//                    if (currentEditType != null) {
+//                        Log.d("===", "ACTION_MOVE")
+//                        curTouchPoint.x = event.x.toInt()
+//                        curTouchPoint.y = event.y.toInt()
+//                        curDistance = calculateDistance(curTouchPoint, centerPoint!!)
+//                        curAngle = calculateAngle(curTouchPoint, centerPoint!!)
+////
+//                        val deltaAngle = toDegrees(preAngle - curAngle.toDouble())
+//                        Log.d("===", "ACTION_MOVE $centerPoint!!")
+//                        Log.d("===", "ACTION_MOVE deltaAngle $deltaAngle")
+////                        angle +=deltaAngle.toFloat()
+//                        val scale =
+//                            (1f * curDistance / preDistance).coerceAtLeast(0.95f)
+//                                .coerceAtMost(1.05f)
+////                        setScale(scale)
+//                        Log.d("===", "ACTION_MOVE scale $scale")
+//                    }
+//                }
+//                MotionEvent.ACTION_UP -> {
+//                    if (currentEditType != null) {
+//                        Log.d("===", "ACTION_UP")
+//                        currentEditType = null
+//                        preTouchPoint.set(0, 0)
+//                        curTouchPoint.set(0, 0)
+//                    }
+//                }
+//            }
+            if (currentEditType == null) {
+                if (event.pointerCount == 1) {
+                    moveGestureDetector.onTouchEvent(event)
+                }
             }
             scaleGestureDetector.onTouchEvent(event)
             rotationGestureDetector.onTouchEvent(event)
-            if (event.actionMasked == MotionEvent.ACTION_UP) {
-                Log.d("===", "left: $left top: $top width: $width height: $height")
-            }
-            true
+            return true
         } else {
-            false
+            return false
         }
     }
 
@@ -176,8 +240,25 @@ class EffectEditView @JvmOverloads constructor(
             linePath.close()
             canvas?.drawPath(linePath, linePaint)
             // draw buttons
-            getEditPoints().forEach { point ->
-                canvas?.drawCircle(point.x.toFloat(), point.y.toFloat(), radius.toFloat(), paint)
+            getEditPoints().forEachIndexed { index, point ->
+                when (editButtonList[index]) {
+                    EditType.Adjust -> {
+                        canvas?.drawCircle(
+                            point.x.toFloat(),
+                            point.y.toFloat(),
+                            radius.toFloat(),
+                            adjustPaint
+                        )
+                    }
+                    else -> {
+                        canvas?.drawCircle(
+                            point.x.toFloat(),
+                            point.y.toFloat(),
+                            radius.toFloat(),
+                            paint
+                        )
+                    }
+                }
             }
         }
     }
@@ -194,6 +275,7 @@ class EffectEditView @JvmOverloads constructor(
             val distance = calculateDistance(touchPoint, point)
             if (distance < radius) {
                 result = true
+                currentEditType = editButtonList[index]
                 Log.d("===", "${this@EffectEditView.id} ${editButtonList[index]} touch")
             }
         }
@@ -221,12 +303,13 @@ class EffectEditView @JvmOverloads constructor(
         val result = getCross(p1, p2, point) * getCross(p3, p4, point) >= 0 &&
                 getCross(p2, p3, point) * getCross(p4, p1, point) >= 0
         if (result) {
+            currentEditType = null
             Log.d("===", "${this@EffectEditView.id} content touch")
         }
         return result
     }
 
-    private fun getEditPoints(centerPoint: Point = this.centerPoint): List<Point> {
+    private fun getEditPoints(centerPoint: Point = this.innerCenterPoint): List<Point> {
         return editButtonList.map {
             when (it) {
                 // top left
@@ -268,6 +351,10 @@ class EffectEditView @JvmOverloads constructor(
             touchPoint.x.toFloat() - targetPoint.x.toFloat(),
             touchPoint.y.toFloat() - targetPoint.y.toFloat()
         ).toInt()
+    }
+
+    private fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
+        return atan2(startPoint.x - targetPoint.x.toFloat(), startPoint.y - targetPoint.y.toFloat())
     }
 
     enum class EditType {

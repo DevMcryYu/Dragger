@@ -25,6 +25,19 @@ class DecorViewGroup @JvmOverloads constructor(
         }
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_UP -> {
+                editingView = null
+            }
+        }
+//        Log.e("===", "${this.javaClass.name} onTouchEvent ${event.x} ${event.y}")
+        if (editingView != null) {
+            editingView?.dispatchTouchEvent(event)
+        }
+        return true
+    }
+
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -32,12 +45,8 @@ class DecorViewGroup @JvmOverloads constructor(
                     var captured = false
                     children.toList().reversed().forEach {
                         if (it is EffectEditView) {
-                            val centerPoint =
-                                Point(
-                                    it.left + it.measuredWidth / 2,
-                                    it.top + it.measuredHeight / 2
-                                )
-                            if (!captured && it.tryInterceptTouchEvent(ev, centerPoint)) {
+                            if (!captured && it.tryInterceptTouchEvent(ev, it.outerCenterPoint)) {
+//                                Log.e("===", "${this.javaClass.name} onInterceptTouchEvent ${ev.x} ${ev.y}")
                                 captured = true
                                 it.editing = true
                                 editingView = it
