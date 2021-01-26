@@ -5,6 +5,8 @@ import android.graphics.Point
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.widget.FrameLayout
+import android.widget.ImageView
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 
 /**
@@ -18,6 +20,43 @@ class DecorViewGroup @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
     private var editingView: EffectEditView? = null
+
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        val view = EffectEditView(context).apply {
+            background = ResourcesCompat.getDrawable(resources, R.color.purple_700, context.theme)
+            val content = ImageView(context)
+            content.setImageDrawable(
+                ResourcesCompat.getDrawable(
+                    resources,
+                    R.drawable.ic_launcher_foreground,
+                    context.theme
+                )
+            )
+            content.background= ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
+            contentView = content
+            setSize(500, 600)
+            angle = 76f
+        }
+        addView(view)
+
+        val view1 = EffectEditView(context).apply {
+            background = ResourcesCompat.getDrawable(resources, R.color.purple_700, context.theme)
+            val content = ImageView(context)
+            content.setImageDrawable(
+                ResourcesCompat.getDrawable(
+                    resources,
+                    R.drawable.ic_launcher_foreground,
+                    context.theme
+                )
+            )
+            content.background= ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
+            contentView = content
+            setSize(400, 300)
+            angle = 23f
+        }
+        addView(view1)
+    }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         children.iterator().forEach {

@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.text.Layout;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -83,6 +84,9 @@ public class RotateLayout extends ViewGroup {
 
     public void setSize(int width, int height) {
         LayoutParams lp = getContentView().getLayoutParams();
+        if (lp == null) {
+            lp = new ViewGroup.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        }
         lp.width = width;
         lp.height = height;
         getContentView().setLayoutParams(lp);
@@ -97,6 +101,13 @@ public class RotateLayout extends ViewGroup {
         offsetLeftAndRight((lp.width - width) / 2);
         offsetTopAndBottom((lp.height - height) / 2);
         setSize(width, height);
+    }
+
+    public void setContentView(View view) {
+        if (getChildCount() > 0) {
+            removeAllViews();
+        }
+        addView(view);
     }
 
     /**

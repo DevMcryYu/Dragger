@@ -5,40 +5,4 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/material_on_background_emphasis_high_type"
-    tools:context=".FirstFragment">
-
-    <com.devmcry.dragger.EffectEditView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@color/purple_700"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:id="@+id/testImage1"
-            android:layout_width="256dp"
-            android:layout_height="256dp"
-            android:src="@color/teal_200" />
-
-    </com.devmcry.dragger.EffectEditView>
-
-    <com.devmcry.dragger.EffectEditView
-        android:id="@+id/test"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@color/purple_700"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:id="@+id/testImage2"
-            android:layout_width="96dp"
-            android:layout_height="192dp"
-            android:src="@color/black" />
-
-    </com.devmcry.dragger.EffectEditView>
-</com.devmcry.dragger.DecorViewGroup>
+    tools:context=".FirstFragment"/>

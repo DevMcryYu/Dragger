@@ -130,6 +130,10 @@ class EffectEditView @JvmOverloads constructor(
         })
     }
 
+    init {
+        layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT)
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         kotlin.runCatching {
@@ -143,23 +147,6 @@ class EffectEditView @JvmOverloads constructor(
             }
         }
     }
-
-    //test
-    override fun onFinishInflate() {
-        super.onFinishInflate()
-        val animator = if (id == R.id.test) {
-            ValueAnimator.ofFloat(0f, 135f)
-        } else {
-            ValueAnimator.ofFloat(0f, -75f)
-        }
-        animator.duration = 1000
-        animator.addUpdateListener { animation ->
-            val value = animation.animatedValue as Float
-            angle = value
-        }
-        animator.start()
-    }
-    //test
 
     private var centerPoint: Point? = null
     private val preTouchPoint: Point by lazy { Point(0, 0) }
