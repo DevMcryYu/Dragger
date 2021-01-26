@@ -58,12 +58,16 @@ open class BaseEditView @JvmOverloads constructor(
     private var originWidth: Int = 0
     private var originHeight: Int = 0
 
-    var scale: Float
-        get() = 1f * width / originWidth
+    var scale: Float = 1f
         set(value) {
+            field = value.coerceAtLeast(0.5f).coerceAtMost(1.5f)
             contentView?.updateLayoutParams {
-                width = (measuredWidth * value).toInt()
-                height = (measuredHeight * value).toInt()
+                val newWidth = (originWidth * field).toInt()
+                val newHeight = (originHeight * field).toInt()
+                offsetLeftAndRight((width - newWidth) / 2)
+                offsetTopAndBottom((height - newHeight) / 2)
+                width = newWidth
+                height = newHeight
             }
         }
 

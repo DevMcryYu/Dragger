@@ -93,9 +93,10 @@ open class BaseEditViewGroup @JvmOverloads constructor(
                     return if (detector != null) {
                         val preSpan = detector.previousSpan
                         val curSpan = detector.currentSpan
-                        val scale = (curSpan / preSpan)
+                        val scaleDelta = (curSpan / preSpan) - 1
+                        log("scaleDelta $scaleDelta")
                         selectViewNew?.run {
-                            this.scale = scale
+                            this.scale += scaleDelta
                         }
                         true
                     } else {
@@ -165,7 +166,6 @@ open class BaseEditViewGroup @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        log(selectViewNew?.currentEditType?.toString() ?: "null")
         var result = true
         kotlin.runCatching {
             if (selectViewNew != null) {
