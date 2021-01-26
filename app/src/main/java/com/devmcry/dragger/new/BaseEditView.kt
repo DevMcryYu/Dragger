@@ -8,7 +8,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import androidx.core.view.updateLayoutParams
-import com.devmcry.dragger.EffectEditView
 import com.devmcry.dragger.PosTransHelper
 import kotlin.math.atan2
 import kotlin.math.hypot
@@ -68,11 +67,12 @@ open class BaseEditView @JvmOverloads constructor(
 
     init {
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+        this.setWillNotDraw(false)
     }
 
-    protected  val radius = 56
+    protected val radius = 56
 
-    protected  val editButtonList: List<EditType> by lazy {
+    protected val editButtonList: List<EditType> by lazy {
         listOf(
             EditType.Delete,
             EditType.Edit,
@@ -109,8 +109,8 @@ open class BaseEditView @JvmOverloads constructor(
         strokeWidth = 2f
     }
 
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
+    override fun dispatchDraw(canvas: Canvas?) {
+        super.dispatchDraw(canvas)
         if (editing) {
             // draw lines
             linePath.reset()
