@@ -7,8 +7,11 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageView
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import androidx.customview.widget.ViewDragHelper
+import com.devmcry.dragger.R
 import com.devmcry.dragger.RotationGestureDetector
 
 /**
@@ -30,11 +33,20 @@ open class BaseEditViewGroup @JvmOverloads constructor(
         )
     }
 
+    private val drawable by lazy {
+        ResourcesCompat.getDrawable(
+            resources,
+            R.drawable.ic_launcher_foreground,
+            context.theme
+        )
+    }
+
     private val viewDragCallback: ViewDragHelper.Callback by lazy {
         object : ViewDragHelper.Callback() {
             override fun tryCaptureView(child: View, pointerId: Int): Boolean = true
 
             override fun onViewCaptured(capturedChild: View, activePointerId: Int) {
+                capturedChild.bringToFront()
             }
 
             override fun onViewReleased(releasedChild: View, xvel: Float, yvel: Float) {
@@ -113,18 +125,59 @@ open class BaseEditViewGroup @JvmOverloads constructor(
     }
 
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
-        return viewDragHelper.shouldInterceptTouchEvent(event)
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                var captured = false
+                children.toList().reversed().forEach {
+                    if (it is EffectEditViewNew) {
+                        if (!captured && it.tryInterceptTouchEvent(event, it.outerCenterPoint)) {
+                            captured = true
+                            it.editing = true
+
+                            if (selectViewNew != it) {
+                                if (selectViewNew != null) {
+                                    log("${selectViewNew!!.id} unselected")
+                                    (selectViewNew!!.contentView as ImageView).setImageDrawable(
+                                        null
+                                    )
+                                }
+                                selectViewNew = it
+                                log("${selectViewNew!!.id} selected")
+                                (selectViewNew!!.contentView as ImageView).setImageDrawable(
+                                    drawable
+                                )
+                            }
+                        } else {
+                            it.editing = false
+                        }
+                    }
+                }
+                if (!captured) {
+                    if (selectViewNew != null) {
+                        log("${selectViewNew!!.id} unselected")
+                        (selectViewNew!!.contentView as ImageView).setImageDrawable(null)
+                    }
+                    selectViewNew = null
+                }
+            }
+        }
+        return true
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        log(selectViewNew?.currentEditType?.toString() ?: "null")
         var result = true
         kotlin.runCatching {
-            result = scaleGestureDetector.onTouchEvent(event)
-            rotationGestureDetector.onTouchEvent(event)
-            if (event.pointerCount == 1) {
-                viewDragHelper.processTouchEvent(event)
-            } else {
-                viewDragHelper.cancel()
+            if (selectViewNew != null) {
+                result = scaleGestureDetector.onTouchEvent(event)
+                rotationGestureDetector.onTouchEvent(event)
+                if (selectViewNew?.currentEditType == null) {
+                    if (event.pointerCount == 1) {
+                        viewDragHelper.processTouchEvent(event)
+                    } else {
+                        viewDragHelper.cancel()
+                    }
+                }
             }
         }.onFailure {
             result = false

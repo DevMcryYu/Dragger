@@ -96,7 +96,7 @@ open class BaseEditView @JvmOverloads constructor(
             EditType.Custom,
         )
     }
-    protected var currentEditType: EditType? = null
+    var currentEditType: EditType? = null
 
     var editing = false
         set(value) {

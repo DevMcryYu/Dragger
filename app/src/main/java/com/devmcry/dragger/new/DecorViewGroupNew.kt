@@ -20,21 +20,13 @@ class DecorViewGroupNew @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : BaseEditViewGroup(context, attrs, defStyleAttr) {
-    private var editingViewNew: EffectEditViewNew? = null
-    private val drawable by lazy {
-        ResourcesCompat.getDrawable(
-            resources,
-            R.drawable.ic_launcher_foreground,
-            context.theme
-        )
-    }
 
     override fun onFinishInflate() {
         super.onFinishInflate()
         val view = EffectEditViewNew(context).apply {
             id = 1
             val content = ImageView(context)
-            content.layoutParams = LayoutParams(500,600)
+            content.layoutParams = LayoutParams(500, 600)
             content.background =
                 ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content
@@ -44,7 +36,7 @@ class DecorViewGroupNew @JvmOverloads constructor(
         val view1 = EffectEditViewNew(context).apply {
             id = 2
             val content = ImageView(context)
-            content.layoutParams = LayoutParams(400,300)
+            content.layoutParams = LayoutParams(400, 300)
             content.background =
                 ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content
@@ -53,69 +45,6 @@ class DecorViewGroupNew @JvmOverloads constructor(
         addView(view1)
     }
 
-
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_UP -> {
-                editingViewNew = null
-            }
-        }
-//        Log.e("===", "${this.javaClass.name} onTouchEvent ${event.x} ${event.y}")
-//        if (editingViewNew != null) {
-//            editingViewNew?.dispatchTouchEvent(event)
-//        }
-        super.onTouchEvent(event)
-        return true
-    }
-
-    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                if (editingViewNew == null) {
-                    var captured = false
-                    children.toList().reversed().forEach {
-                        if (it is EffectEditViewNew) {
-                            if (!captured && it.tryInterceptTouchEvent(ev, it.outerCenterPoint)) {
-//                                Log.e("===", "${this.javaClass.name} onInterceptTouchEvent ${ev.x} ${ev.y}")
-                                captured = true
-                                it.editing = true
-                                editingViewNew = it
-
-                                if (selectViewNew != it) {
-                                    if (selectViewNew != null) {
-                                        log("${selectViewNew!!.id} unselected")
-                                        (selectViewNew!!.contentView as ImageView).setImageDrawable(
-                                            null
-                                        )
-                                    }
-                                    selectViewNew = it
-                                    log("${selectViewNew!!.id} selected")
-                                    (selectViewNew!!.contentView as ImageView).setImageDrawable(
-                                        drawable
-                                    )
-                                }
-                            } else {
-                                it.editing = false
-                            }
-                        }
-                    }
-                    if (!captured) {
-                        editingViewNew = null
-                        if (selectViewNew != null) {
-                            log("${selectViewNew!!.id} unselected")
-                            (selectViewNew!!.contentView as ImageView).setImageDrawable(null)
-                        }
-                        selectViewNew = null
-                    }
-                }
-            }
-            MotionEvent.ACTION_UP -> {
-                editingViewNew = null
-            }
-        }
-        return super.onInterceptTouchEvent(ev)
-    }
 }
 
 fun Any.log(log: String) {
