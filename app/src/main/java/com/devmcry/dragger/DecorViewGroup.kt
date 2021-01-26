@@ -1,9 +1,10 @@
 package com.devmcry.dragger
 
 import android.content.Context
-import android.graphics.Point
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.content.res.ResourcesCompat
@@ -20,37 +21,31 @@ class DecorViewGroup @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
     private var editingView: EffectEditView? = null
+    private val drawable by lazy {
+        ResourcesCompat.getDrawable(
+            resources,
+            R.drawable.ic_launcher_foreground,
+            context.theme
+        )
+    }
 
     override fun onFinishInflate() {
         super.onFinishInflate()
         val view = EffectEditView(context).apply {
-            background = ResourcesCompat.getDrawable(resources, R.color.purple_700, context.theme)
+            id = 1
             val content = ImageView(context)
-            content.setImageDrawable(
-                ResourcesCompat.getDrawable(
-                    resources,
-                    R.drawable.ic_launcher_foreground,
-                    context.theme
-                )
-            )
-            content.background= ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
+            content.background =
+                ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content
             setSize(500, 600)
             angle = 76f
         }
         addView(view)
-
         val view1 = EffectEditView(context).apply {
-            background = ResourcesCompat.getDrawable(resources, R.color.purple_700, context.theme)
+            id = 2
             val content = ImageView(context)
-            content.setImageDrawable(
-                ResourcesCompat.getDrawable(
-                    resources,
-                    R.drawable.ic_launcher_foreground,
-                    context.theme
-                )
-            )
-            content.background= ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
+            content.background =
+                ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content
             setSize(400, 300)
             angle = 23f
@@ -77,6 +72,7 @@ class DecorViewGroup @JvmOverloads constructor(
         return true
     }
 
+    private var selectView: EffectEditView? = null
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -89,6 +85,20 @@ class DecorViewGroup @JvmOverloads constructor(
                                 captured = true
                                 it.editing = true
                                 editingView = it
+
+                                if (selectView != it) {
+                                    if (selectView != null) {
+                                        log("${selectView!!.id} unselected")
+                                        (selectView!!.contentView as ImageView).setImageDrawable(
+                                            null
+                                        )
+                                    }
+                                    selectView = it
+                                    log("${selectView!!.id} selected")
+                                    (selectView!!.contentView as ImageView).setImageDrawable(
+                                        drawable
+                                    )
+                                }
                             } else {
                                 it.editing = false
                             }
@@ -96,6 +106,11 @@ class DecorViewGroup @JvmOverloads constructor(
                     }
                     if (!captured) {
                         editingView = null
+                        if (selectView != null) {
+                            log("${selectView!!.id} unselected")
+                            (selectView!!.contentView as ImageView).setImageDrawable(null)
+                        }
+                        selectView = null
                     }
                 }
             }
@@ -105,4 +120,8 @@ class DecorViewGroup @JvmOverloads constructor(
         }
         return false
     }
+}
+
+fun Any.log(log: String) {
+    Log.d("===", log)
 }
