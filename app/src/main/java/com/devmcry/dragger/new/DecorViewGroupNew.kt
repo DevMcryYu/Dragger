@@ -38,7 +38,7 @@ class DecorViewGroupNew @JvmOverloads constructor(
             content.background =
                 ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content
-            angle = 76f
+            angle = 0f
         }
         addView(view)
         val view1 = EffectEditViewNew(context).apply {
@@ -48,7 +48,7 @@ class DecorViewGroupNew @JvmOverloads constructor(
             content.background =
                 ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content
-            angle = 23f
+            angle = 0f
         }
         addView(view1)
     }

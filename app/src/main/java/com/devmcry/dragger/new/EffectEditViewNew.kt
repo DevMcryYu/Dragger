@@ -164,7 +164,7 @@ class EffectEditViewNew @JvmOverloads constructor(
 //            }
             if (currentEditType == null) {
                 if (event.pointerCount == 1) {
-//                    moveGestureDetector.onTouchEvent(event)
+                    moveGestureDetector.onTouchEvent(event)
                 }
             }
             scaleGestureDetector.onTouchEvent(event)
