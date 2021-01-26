@@ -97,20 +97,6 @@ class EffectEditViewNew @JvmOverloads constructor(
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        kotlin.runCatching {
-            parent as ViewGroup
-        }.onSuccess {
-            if (it.clipChildren) {
-                it.clipChildren = false
-            }
-            if (it.clipToPadding) {
-                it.clipToPadding = false
-            }
-        }
-    }
-
     private var centerPoint: Point? = null
     private val preTouchPoint: Point by lazy { Point(0, 0) }
     private var preDistance: Int = 0
@@ -119,59 +105,59 @@ class EffectEditViewNew @JvmOverloads constructor(
     private var curDistance: Int = 0
     private var curAngle: Float = 0f
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (editing) {
-//            when (event.actionMasked) {
-//                MotionEvent.ACTION_DOWN -> {
-//                    bringToFront()
-//                    if (currentEditType != null) {
-//                        Log.d("===", "ACTION_DOWN")
-//                        preTouchPoint.x = event.x.toInt()
-//                        preTouchPoint.y = event.y.toInt()
-//                        centerPoint = innerCenterPoint
-//                        preDistance = calculateDistance(preTouchPoint, centerPoint!!)
-//                        preAngle = calculateAngle(preTouchPoint, centerPoint!!)
-//                        Log.d("===", "ACTION_DOWN $preTouchPoint")
-//                    }
-//                }
-//                MotionEvent.ACTION_MOVE -> {
-//                    if (currentEditType != null) {
-//                        Log.d("===", "ACTION_MOVE")
-//                        curTouchPoint.x = event.x.toInt()
-//                        curTouchPoint.y = event.y.toInt()
-//                        curDistance = calculateDistance(curTouchPoint, centerPoint!!)
-//                        curAngle = calculateAngle(curTouchPoint, centerPoint!!)
-////
-//                        val deltaAngle = toDegrees(preAngle - curAngle.toDouble())
-//                        Log.d("===", "ACTION_MOVE $centerPoint!!")
-//                        Log.d("===", "ACTION_MOVE deltaAngle $deltaAngle")
-////                        angle +=deltaAngle.toFloat()
-//                        val scale =
-//                            (1f * curDistance / preDistance).coerceAtLeast(0.95f)
-//                                .coerceAtMost(1.05f)
-////                        setScale(scale)
-//                        Log.d("===", "ACTION_MOVE scale $scale")
-//                    }
-//                }
-//                MotionEvent.ACTION_UP -> {
-//                    if (currentEditType != null) {
-//                        Log.d("===", "ACTION_UP")
-//                        currentEditType = null
-//                        preTouchPoint.set(0, 0)
-//                        curTouchPoint.set(0, 0)
-//                    }
+//    override fun onTouchEvent(event: MotionEvent): Boolean {
+//        if (editing) {
+////            when (event.actionMasked) {
+////                MotionEvent.ACTION_DOWN -> {
+////                    bringToFront()
+////                    if (currentEditType != null) {
+////                        Log.d("===", "ACTION_DOWN")
+////                        preTouchPoint.x = event.x.toInt()
+////                        preTouchPoint.y = event.y.toInt()
+////                        centerPoint = innerCenterPoint
+////                        preDistance = calculateDistance(preTouchPoint, centerPoint!!)
+////                        preAngle = calculateAngle(preTouchPoint, centerPoint!!)
+////                        Log.d("===", "ACTION_DOWN $preTouchPoint")
+////                    }
+////                }
+////                MotionEvent.ACTION_MOVE -> {
+////                    if (currentEditType != null) {
+////                        Log.d("===", "ACTION_MOVE")
+////                        curTouchPoint.x = event.x.toInt()
+////                        curTouchPoint.y = event.y.toInt()
+////                        curDistance = calculateDistance(curTouchPoint, centerPoint!!)
+////                        curAngle = calculateAngle(curTouchPoint, centerPoint!!)
+//////
+////                        val deltaAngle = toDegrees(preAngle - curAngle.toDouble())
+////                        Log.d("===", "ACTION_MOVE $centerPoint!!")
+////                        Log.d("===", "ACTION_MOVE deltaAngle $deltaAngle")
+//////                        angle +=deltaAngle.toFloat()
+////                        val scale =
+////                            (1f * curDistance / preDistance).coerceAtLeast(0.95f)
+////                                .coerceAtMost(1.05f)
+//////                        setScale(scale)
+////                        Log.d("===", "ACTION_MOVE scale $scale")
+////                    }
+////                }
+////                MotionEvent.ACTION_UP -> {
+////                    if (currentEditType != null) {
+////                        Log.d("===", "ACTION_UP")
+////                        currentEditType = null
+////                        preTouchPoint.set(0, 0)
+////                        curTouchPoint.set(0, 0)
+////                    }
+////                }
+////            }
+//            if (currentEditType == null) {
+//                if (event.pointerCount == 1) {
+//                    moveGestureDetector.onTouchEvent(event)
 //                }
 //            }
-            if (currentEditType == null) {
-                if (event.pointerCount == 1) {
-                    moveGestureDetector.onTouchEvent(event)
-                }
-            }
-            scaleGestureDetector.onTouchEvent(event)
-            rotationGestureDetector.onTouchEvent(event)
-            return true
-        } else {
-            return false
-        }
-    }
+//            scaleGestureDetector.onTouchEvent(event)
+//            rotationGestureDetector.onTouchEvent(event)
+//            return true
+//        } else {
+//            return false
+//        }
+//    }
 }

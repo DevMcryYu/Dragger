@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.view.updateLayoutParams
 import com.devmcry.dragger.PosTransHelper
@@ -42,6 +43,7 @@ open class BaseEditView @JvmOverloads constructor(
         get() = rotation
         set(value) {
             rotation = value
+            invalidate()
         }
 
     var size: IntArray
@@ -60,14 +62,28 @@ open class BaseEditView @JvmOverloads constructor(
         get() = 1f * width / originWidth
         set(value) {
             contentView?.updateLayoutParams {
-                width = (originWidth * value).toInt()
-                height = (originHeight * value).toInt()
+                width = (measuredWidth * value).toInt()
+                height = (measuredHeight * value).toInt()
             }
         }
 
     init {
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         this.setWillNotDraw(false)
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        kotlin.runCatching {
+            parent as ViewGroup
+        }.onSuccess {
+            if (it.clipChildren) {
+                it.clipChildren = false
+            }
+            if (it.clipToPadding) {
+                it.clipToPadding = false
+            }
+        }
     }
 
     protected val radius = 56
@@ -114,7 +130,7 @@ open class BaseEditView @JvmOverloads constructor(
         if (editing) {
             // draw lines
             linePath.reset()
-            getEditPoints().forEachIndexed { index, point ->
+            getEditPoints(calculateRotate = false).forEachIndexed { index, point ->
                 if (index == 0) {
                     linePath.moveTo(point.x.toFloat(), point.y.toFloat())
                 } else {
@@ -124,7 +140,7 @@ open class BaseEditView @JvmOverloads constructor(
             linePath.close()
             canvas?.drawPath(linePath, linePaint)
             // draw buttons
-            getEditPoints().forEachIndexed { index, point ->
+            getEditPoints(calculateRotate = false).forEachIndexed { index, point ->
                 when (editButtonList[index]) {
                     EditType.Adjust -> {
                         canvas?.drawCircle(
@@ -154,15 +170,16 @@ open class BaseEditView @JvmOverloads constructor(
 
     private fun isEditButtonUnder(event: MotionEvent, centerPoint: Point): Boolean {
         var result = false
-        getEditPoints(centerPoint).forEachIndexed { index, point ->
-            val touchPoint = Point(event.x.toInt(), event.y.toInt())
-            val distance = calculateDistance(touchPoint, point)
-            if (distance < radius) {
-                result = true
-                currentEditType = editButtonList[index]
-                Log.d("===", "${this.id} ${editButtonList[index]} touch")
+        getEditPoints(centerPoint)
+            .forEachIndexed { index, point ->
+                val touchPoint = Point(event.x.toInt(), event.y.toInt())
+                val distance = calculateDistance(touchPoint, point)
+                if (distance < radius) {
+                    result = true
+                    currentEditType = editButtonList[index]
+                    Log.d("===", "${this.id} ${editButtonList[index]} touch")
+                }
             }
-        }
         return result
     }
 
@@ -193,7 +210,10 @@ open class BaseEditView @JvmOverloads constructor(
         return result
     }
 
-    private fun getEditPoints(centerPoint: Point = this.innerCenterPoint): List<Point> {
+    private fun getEditPoints(
+        centerPoint: Point = this.innerCenterPoint,
+        calculateRotate: Boolean = true
+    ): List<Point> {
         return editButtonList.map {
             when (it) {
                 // top left
@@ -226,7 +246,11 @@ open class BaseEditView @JvmOverloads constructor(
                 }
             }
         }.map {
-            PosTransHelper.rotatePoint(it, rotation, centerPoint)
+            if (calculateRotate) {
+                PosTransHelper.rotatePoint(it, rotation, centerPoint)
+            } else {
+                it
+            }
         }
     }
 
