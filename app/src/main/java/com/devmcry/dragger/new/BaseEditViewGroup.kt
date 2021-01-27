@@ -9,7 +9,6 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import androidx.customview.widget.ViewDragHelper
@@ -17,7 +16,6 @@ import com.devmcry.dragger.R
 import com.devmcry.dragger.RotationGestureDetector
 import com.devmcry.dragger.new.BaseEditView.*
 import java.lang.Math.toDegrees
-import kotlin.math.abs
 
 /**
  *  @author : DevMcryYu
@@ -169,11 +167,9 @@ open class BaseEditViewGroup @JvmOverloads constructor(
         return true
     }
 
-
-    private var centerPoint: Point? = null
-    private var preAngle: Float = 0f
     private val curTouchPoint: Point by lazy { Point(0, 0) }
     private var curDistance: Int = 0
+    private var preAngle: Float = 0f
     private var curAngle: Float = 0f
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -208,9 +204,7 @@ open class BaseEditViewGroup @JvmOverloads constructor(
                                         selectViewNew?.run {
                                             curTouchPoint.x = event.x.toInt()
                                             curTouchPoint.y = event.y.toInt()
-                                            centerPoint = outerCenterPoint
                                         }
-                                        log("adjust start")
                                     }
                                 }
                             }
@@ -218,24 +212,23 @@ open class BaseEditViewGroup @JvmOverloads constructor(
                                 when (type) {
                                     EditType.Adjust -> {
                                         selectViewNew?.run {
-                                            preAngle = calculateAngle(curTouchPoint, centerPoint!!)
-                                            log("preAngle  ${toDegrees(preAngle.toDouble())}")
+                                            preAngle =
+                                                calculateAngle(curTouchPoint, outerCenterPoint)
                                             curTouchPoint.x = event.x.toInt()
                                             curTouchPoint.y = event.y.toInt()
+                                            // 先旋转
+                                            curAngle =
+                                                calculateAngle(curTouchPoint, outerCenterPoint)
+                                            val deltaAngle =
+                                                -toDegrees(preAngle - curAngle.toDouble())
+                                            angle += deltaAngle.toFloat()
+                                            // 后缩放
                                             curDistance =
                                                 calculateDistance(curTouchPoint, outerCenterPoint)
                                             val scaleDelta =
                                                 (1f * curDistance / (diagonal / 2f)) - 1
                                             this.scale += scaleDelta
-
-//                                            curAngle =
-//                                                calculateAngle(curTouchPoint, outerCenterPoint)
-//                                            log("curAngle ${toDegrees(curAngle.toDouble())}")
-//                                            val deltaAngle = -(preAngle - curAngle)
-//                                            log("deltaAngle $deltaAngle")
-//                                            angle += toDegrees(deltaAngle.toDouble()).toFloat()
                                         }
-                                        log("adjusting")
                                     }
                                 }
                             }
@@ -262,13 +255,11 @@ open class BaseEditViewGroup @JvmOverloads constructor(
                                     }
                                     EditType.Adjust -> {
                                         selectViewNew?.run {
-                                            centerPoint = null
                                             curTouchPoint.set(0, 0)
                                             curDistance = 0
                                             curAngle = 0f
                                             preAngle = 0f
                                         }
-                                        log("adjust finish")
                                     }
                                 }
                             }
@@ -279,7 +270,6 @@ open class BaseEditViewGroup @JvmOverloads constructor(
         }.onFailure {
             result = false
         }
-
         return result
     }
 
