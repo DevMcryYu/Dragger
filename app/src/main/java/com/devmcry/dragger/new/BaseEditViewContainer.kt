@@ -3,7 +3,6 @@ package com.devmcry.dragger.new
 import android.content.Context
 import android.graphics.Point
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
@@ -69,7 +68,6 @@ abstract class BaseEditViewContainer @JvmOverloads constructor(
             RotationGestureDetector.SimpleOnRotationGestureListener() {
             override fun onRotation(rotationDetector: RotationGestureDetector?): Boolean {
                 rotationDetector?.angle?.let { angle ->
-                    Log.d("==== rotate angle", angle.toString())
                     currentEditView?.run {
                         this.angle += angle
                     }
@@ -87,7 +85,6 @@ abstract class BaseEditViewContainer @JvmOverloads constructor(
                         val preSpan = detector.previousSpan
                         val curSpan = detector.currentSpan
                         val scaleDelta = (curSpan / preSpan) - 1
-                        log("scaleDelta $scaleDelta")
                         currentEditView?.run {
                             this.scale += scaleDelta
                         }

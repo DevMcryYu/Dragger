@@ -13,7 +13,7 @@ import com.devmcry.dragger.R
  *  @date : 1/22/21 12:13 PM
  *  @description :
  */
-class DecorViewGroupNew @JvmOverloads constructor(
+class DecorContainer @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
@@ -61,8 +61,4 @@ class DecorViewGroupNew @JvmOverloads constructor(
         addView(view1)
     }
 
-}
-
-fun Any.log(log: String) {
-    Log.d("===", log)
 }
