@@ -4,6 +4,8 @@ import android.graphics.Point
 import android.graphics.PointF
 import android.view.View
 import androidx.core.graphics.toPointF
+import com.devmcry.dragger.new.BaseEditView
+import com.devmcry.dragger.model.DecorLayer
 import java.lang.Math.toRadians
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -14,6 +16,15 @@ import kotlin.math.sin
  *  @date : 2020/12/18 17:51
  *  @description :
  */
+
+interface DecorLayerTransformer {
+
+    fun save(): List<Pair<BaseEditView, PointF>>
+
+    fun restore(decorList: List<Pair<BaseEditView, PointF>>)
+
+    fun export(): List<DecorLayer>
+}
 
 object PosTransHelper {
 
