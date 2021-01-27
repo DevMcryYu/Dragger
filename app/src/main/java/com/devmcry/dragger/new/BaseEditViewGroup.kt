@@ -183,6 +183,15 @@ open class BaseEditViewGroup @JvmOverloads constructor(
                 if (selectViewNew?.currentEditType == null) {
                     if (event.pointerCount == 1) {
                         viewDragHelper.processTouchEvent(event)
+                        // 解决 ViewDragHelper ACTION_DOWN 事件时调用 cancel 导致 mActivePointerId 被重置的问题
+                        // 该问题导致 captureChildView 后 isValidPointerForActionMove 返回 false 拖动失败
+                        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                            selectViewNew?.run {
+                                if (isContentViewUnder(event, outerCenterPoint)) {
+                                    viewDragHelper.captureChildView(this, event.getPointerId(0))
+                                }
+                            }
+                        }
                     } else {
                         viewDragHelper.cancel()
                     }
