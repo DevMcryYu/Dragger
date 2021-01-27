@@ -3,11 +3,8 @@ package com.devmcry.dragger.new
 import android.content.Context
 import android.util.AttributeSet
 import android.util.Log
-import android.view.MotionEvent
-import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.children
 import com.devmcry.dragger.R
 
 /**
@@ -19,11 +16,11 @@ class DecorViewGroupNew @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : BaseEditViewGroup(context, attrs, defStyleAttr) {
+) : BaseEditViewContainer(context, attrs, defStyleAttr) {
 
     override fun onFinishInflate() {
         super.onFinishInflate()
-        val view = EffectEditViewNew(context).apply {
+        val view = DecorEditView(context).apply {
             id = 1
             val content = ImageView(context)
             content.layoutParams = LayoutParams(500, 600)
@@ -33,7 +30,7 @@ class DecorViewGroupNew @JvmOverloads constructor(
             angle = 0f
         }
         addView(view)
-        val view1 = EffectEditViewNew(context).apply {
+        val view1 = DecorEditView(context).apply {
             id = 2
             val content = ImageView(context)
             content.layoutParams = LayoutParams(400, 400)

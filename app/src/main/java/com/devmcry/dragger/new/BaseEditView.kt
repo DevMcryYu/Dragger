@@ -24,7 +24,7 @@ open class BaseEditView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
+    private val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
     val diagonal: Int
         get() = hypot(
             size[0].toFloat(),
@@ -298,12 +298,5 @@ open class BaseEditView @JvmOverloads constructor(
 
     fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
         return atan2(startPoint.y - targetPoint.y.toFloat(), startPoint.x - targetPoint.x.toFloat())
-    }
-
-    enum class EditType {
-        Delete,
-        Edit,
-        Adjust,
-        Custom
     }
 }

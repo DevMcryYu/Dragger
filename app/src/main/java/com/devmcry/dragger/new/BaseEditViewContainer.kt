@@ -14,7 +14,6 @@ import androidx.core.view.children
 import androidx.customview.widget.ViewDragHelper
 import com.devmcry.dragger.R
 import com.devmcry.dragger.RotationGestureDetector
-import com.devmcry.dragger.new.BaseEditView.*
 import java.lang.Math.toDegrees
 
 /**
@@ -22,12 +21,12 @@ import java.lang.Math.toDegrees
  *  @date : 1/26/21 12:23 PM
  *  @description :
  */
-open class BaseEditViewGroup @JvmOverloads constructor(
+open class BaseEditViewContainer @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
-    protected var selectViewNew: EffectEditViewNew? = null
+    protected var selectViewNew: DecorEditView? = null
     private val viewDragHelper: ViewDragHelper by lazy {
         ViewDragHelper.create(
             this,
@@ -133,7 +132,7 @@ open class BaseEditViewGroup @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 var captured = false
                 children.toList().reversed().forEach {
-                    if (it is EffectEditViewNew) {
+                    if (it is DecorEditView) {
                         if (!captured && it.tryInterceptTouchEvent(event, it.outerCenterPoint)) {
                             captured = true
                             it.editing = true
