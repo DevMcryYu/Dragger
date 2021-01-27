@@ -36,7 +36,7 @@ class DecorViewGroupNew @JvmOverloads constructor(
         val view1 = EffectEditViewNew(context).apply {
             id = 2
             val content = ImageView(context)
-            content.layoutParams = LayoutParams(400, 300)
+            content.layoutParams = LayoutParams(400, 400)
             content.background =
                 ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
             contentView = content

@@ -297,7 +297,7 @@ open class BaseEditView @JvmOverloads constructor(
     }
 
     fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
-        return atan2(startPoint.x - targetPoint.x.toFloat(), startPoint.y - targetPoint.y.toFloat())
+        return atan2(startPoint.y - targetPoint.y.toFloat(), startPoint.x - targetPoint.x.toFloat())
     }
 
     enum class EditType {
