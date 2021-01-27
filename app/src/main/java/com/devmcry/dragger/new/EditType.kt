@@ -5,7 +5,7 @@ package com.devmcry.dragger.new
  *  @date : 1/27/21 4:46 PM
  *  @description :
  */
-enum class EditType {
+enum class EditType(var enable: Boolean = true) {
     Delete,
     Edit,
     Adjust,

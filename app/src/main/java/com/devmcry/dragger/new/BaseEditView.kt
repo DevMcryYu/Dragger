@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.view.updateLayoutParams
 import com.devmcry.dragger.PosTransHelper
-import kotlin.math.atan2
 import kotlin.math.hypot
 
 /**
@@ -24,12 +23,19 @@ open class BaseEditView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
+    companion object {
+        private const val MIN_SCALE = 0.5f
+        private const val MAX_SCALE = 2f
+    }
+
     val diagonal: Int
         get() = hypot(
             size[0].toFloat(),
             size[1].toFloat()
         ).toInt()
+
+    private val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
+
     val outerCenterPoint
         get() = innerCenterPoint.apply {
             x += left
@@ -53,11 +59,6 @@ open class BaseEditView @JvmOverloads constructor(
 
     private var originWidth: Int = 0
     private var originHeight: Int = 0
-
-    companion object {
-        private const val MIN_SCALE = 0.5f
-        private const val MAX_SCALE = 1.5f
-    }
 
     /* transform */
     var angle: Float
@@ -116,14 +117,14 @@ open class BaseEditView @JvmOverloads constructor(
         }
     }
 
-    protected val radius = 56
+    private val radius = 48
 
-    protected val editButtonList: List<EditType> by lazy {
+    private val editButtonList: List<EditType> by lazy {
         listOf(
             EditType.Delete,
             EditType.Edit,
             EditType.Adjust,
-            EditType.Custom,
+            EditType.Custom.apply { enable = false },
         )
     }
     var currentEditType: EditType? = null
@@ -169,22 +170,25 @@ open class BaseEditView @JvmOverloads constructor(
             canvas?.drawPath(linePath, linePaint)
             // draw buttons
             getEditPoints(calculateRotate = false).forEachIndexed { index, point ->
-                when (editButtonList[index]) {
-                    EditType.Adjust -> {
-                        canvas?.drawCircle(
-                            point.x.toFloat(),
-                            point.y.toFloat(),
-                            radius.toFloat(),
-                            adjustPaint
-                        )
-                    }
-                    else -> {
-                        canvas?.drawCircle(
-                            point.x.toFloat(),
-                            point.y.toFloat(),
-                            radius.toFloat(),
-                            paint
-                        )
+                val button = editButtonList[index]
+                if (button.enable) {
+                    when (button) {
+                        EditType.Adjust -> {
+                            canvas?.drawCircle(
+                                point.x.toFloat(),
+                                point.y.toFloat(),
+                                radius.toFloat(),
+                                adjustPaint
+                            )
+                        }
+                        else -> {
+                            canvas?.drawCircle(
+                                point.x.toFloat(),
+                                point.y.toFloat(),
+                                radius.toFloat(),
+                                paint
+                            )
+                        }
                     }
                 }
             }
@@ -205,16 +209,22 @@ open class BaseEditView @JvmOverloads constructor(
         return currentEditType != null || contentViewUnder
     }
 
+    /**
+     * 判断落点与四个顶点的距离
+     */
     fun isEditButtonUnder(event: MotionEvent, centerPoint: Point): EditType? {
         var result: EditType? = null
         kotlin.run breaking@{
             getEditPoints(centerPoint)
                 .forEachIndexed { index, point ->
-                    val touchPoint = Point(event.x.toInt(), event.y.toInt())
-                    val distance = calculateDistance(touchPoint, point)
-                    if (distance < radius) {
-                        result = editButtonList[index]
-                        return@breaking
+                    val button = editButtonList[index]
+                    if (button.enable) {
+                        val touchPoint = Point(event.x.toInt(), event.y.toInt())
+                        val distance = calculateDistance(touchPoint, point)
+                        if (distance < radius) {
+                            result = button
+                            return@breaking
+                        }
                     }
                 }
         }
@@ -244,6 +254,7 @@ open class BaseEditView @JvmOverloads constructor(
         return result
     }
 
+    // 在这里调整按钮顺序
     private fun getEditPoints(
         centerPoint: Point = this.innerCenterPoint,
         calculateRotate: Boolean = true
@@ -287,16 +298,5 @@ open class BaseEditView @JvmOverloads constructor(
                 it
             }
         }
-    }
-
-    fun calculateDistance(touchPoint: Point, targetPoint: Point): Int {
-        return hypot(
-            touchPoint.x.toFloat() - targetPoint.x.toFloat(),
-            touchPoint.y.toFloat() - targetPoint.y.toFloat()
-        ).toInt()
-    }
-
-    fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
-        return atan2(startPoint.y - targetPoint.y.toFloat(), startPoint.x - targetPoint.x.toFloat())
     }
 }

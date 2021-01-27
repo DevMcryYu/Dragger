@@ -8,38 +8,29 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.ImageView
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import androidx.customview.widget.ViewDragHelper
-import com.devmcry.dragger.R
 import com.devmcry.dragger.RotationGestureDetector
 import java.lang.Math.toDegrees
+import kotlin.math.atan2
+import kotlin.math.hypot
 
 /**
  *  @author : DevMcryYu
  *  @date : 1/26/21 12:23 PM
  *  @description :
  */
-open class BaseEditViewContainer @JvmOverloads constructor(
+abstract class BaseEditViewContainer @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr) {
-    protected var selectViewNew: DecorEditView? = null
+) : FrameLayout(context, attrs, defStyleAttr), EditCallback {
+    protected var currentEditView: BaseEditView? = null
     private val viewDragHelper: ViewDragHelper by lazy {
         ViewDragHelper.create(
             this,
             1f,
             viewDragCallback
-        )
-    }
-
-    private val drawable by lazy {
-        ResourcesCompat.getDrawable(
-            resources,
-            R.drawable.ic_launcher_foreground,
-            context.theme
         )
     }
 
@@ -79,7 +70,7 @@ open class BaseEditViewContainer @JvmOverloads constructor(
             override fun onRotation(rotationDetector: RotationGestureDetector?): Boolean {
                 rotationDetector?.angle?.let { angle ->
                     Log.d("==== rotate angle", angle.toString())
-                    selectViewNew?.run {
+                    currentEditView?.run {
                         this.angle += angle
                     }
                 }
@@ -97,7 +88,7 @@ open class BaseEditViewContainer @JvmOverloads constructor(
                         val curSpan = detector.currentSpan
                         val scaleDelta = (curSpan / preSpan) - 1
                         log("scaleDelta $scaleDelta")
-                        selectViewNew?.run {
+                        currentEditView?.run {
                             this.scale += scaleDelta
                         }
                         true
@@ -136,18 +127,12 @@ open class BaseEditViewContainer @JvmOverloads constructor(
                         if (!captured && it.tryInterceptTouchEvent(event, it.outerCenterPoint)) {
                             captured = true
                             it.editing = true
-                            if (selectViewNew != it) {
-                                if (selectViewNew != null) {
-                                    log("${selectViewNew!!.id} unselected")
-                                    (selectViewNew!!.contentView as ImageView).setImageDrawable(
-                                        null
-                                    )
+                            if (currentEditView != it) {
+                                currentEditView?.run {
+                                    onUnSelected(this)
                                 }
-                                selectViewNew = it
-                                log("${selectViewNew!!.id} selected")
-                                (selectViewNew!!.contentView as ImageView).setImageDrawable(
-                                    drawable
-                                )
+                                currentEditView = it
+                                onSelected(it)
                             }
                         } else {
                             it.editing = false
@@ -155,11 +140,10 @@ open class BaseEditViewContainer @JvmOverloads constructor(
                     }
                 }
                 if (!captured) {
-                    if (selectViewNew != null) {
-                        log("${selectViewNew!!.id} unselected")
-                        (selectViewNew!!.contentView as ImageView).setImageDrawable(null)
+                    currentEditView?.run {
+                        onUnSelected(this)
                     }
-                    selectViewNew = null
+                    currentEditView = null
                 }
             }
         }
@@ -174,14 +158,14 @@ open class BaseEditViewContainer @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         var result = true
         kotlin.runCatching {
-            if (selectViewNew != null) {
-                if (selectViewNew?.currentEditType == null) {
+            if (currentEditView != null) {
+                if (currentEditView?.currentEditType == null) {
                     if (event.pointerCount == 1) {
                         viewDragHelper.processTouchEvent(event)
                         // 解决 ViewDragHelper ACTION_DOWN 事件时调用 cancel 导致 mActivePointerId 被重置的问题
                         // 该问题导致 captureChildView 后 isValidPointerForActionMove 返回 false 拖动失败
                         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                            selectViewNew?.run {
+                            currentEditView?.run {
                                 if (isContentViewUnder(event, outerCenterPoint)) {
                                     viewDragHelper.captureChildView(this, event.getPointerId(0))
                                 }
@@ -195,12 +179,12 @@ open class BaseEditViewContainer @JvmOverloads constructor(
                 } else {
                     // 只允许单指操控
                     if (event.pointerCount == 1) {
-                        val type = requireNotNull(selectViewNew?.currentEditType)
+                        val type = requireNotNull(currentEditView?.currentEditType)
                         when (event.actionMasked) {
                             MotionEvent.ACTION_DOWN -> {
                                 when (type) {
                                     EditType.Adjust -> {
-                                        selectViewNew?.run {
+                                        currentEditView?.run {
                                             curTouchPoint.x = event.x.toInt()
                                             curTouchPoint.y = event.y.toInt()
                                         }
@@ -210,7 +194,7 @@ open class BaseEditViewContainer @JvmOverloads constructor(
                             MotionEvent.ACTION_MOVE -> {
                                 when (type) {
                                     EditType.Adjust -> {
-                                        selectViewNew?.run {
+                                        currentEditView?.run {
                                             preAngle =
                                                 calculateAngle(curTouchPoint, outerCenterPoint)
                                             curTouchPoint.x = event.x.toInt()
@@ -232,28 +216,19 @@ open class BaseEditViewContainer @JvmOverloads constructor(
                                 }
                             }
                             MotionEvent.ACTION_UP -> {
-                                val newType = selectViewNew?.let {
+                                val newType = currentEditView?.let {
                                     it.isEditButtonUnder(event, it.outerCenterPoint)
                                 }
-                                log("type: $type newType $newType")
                                 when (type) {
-                                    EditType.Delete -> {
+                                    EditType.Delete, EditType.Edit, EditType.Custom -> {
                                         if (type == newType) {
-                                            log("delete click")
-                                        }
-                                    }
-                                    EditType.Edit -> {
-                                        if (type == newType) {
-                                            log("edit click")
-                                        }
-                                    }
-                                    EditType.Custom -> {
-                                        if (type == newType) {
-                                            log("custom click")
+                                            currentEditView?.run {
+                                                onAction(this, type)
+                                            }
                                         }
                                     }
                                     EditType.Adjust -> {
-                                        selectViewNew?.run {
+                                        currentEditView?.run {
                                             curTouchPoint.set(0, 0)
                                             curDistance = 0
                                             curAngle = 0f
@@ -277,4 +252,21 @@ open class BaseEditViewContainer @JvmOverloads constructor(
             invalidate()
         }
     }
+
+    abstract override fun onSelected(view: BaseEditView)
+
+    abstract override fun onUnSelected(view: BaseEditView)
+
+    abstract override fun onAction(view: BaseEditView, type: EditType)
+}
+
+fun calculateDistance(touchPoint: Point, targetPoint: Point): Int {
+    return hypot(
+        touchPoint.x.toFloat() - targetPoint.x.toFloat(),
+        touchPoint.y.toFloat() - targetPoint.y.toFloat()
+    ).toInt()
+}
+
+fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
+    return atan2(startPoint.y - targetPoint.y.toFloat(), startPoint.x - targetPoint.x.toFloat())
 }
