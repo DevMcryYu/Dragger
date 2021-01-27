@@ -1,6 +1,7 @@
 package com.devmcry.dragger.new
 
 import android.content.Context
+import android.graphics.Point
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -8,11 +9,15 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import androidx.customview.widget.ViewDragHelper
 import com.devmcry.dragger.R
 import com.devmcry.dragger.RotationGestureDetector
+import com.devmcry.dragger.new.BaseEditView.*
+import java.lang.Math.toDegrees
+import kotlin.math.abs
 
 /**
  *  @author : DevMcryYu
@@ -165,17 +170,103 @@ open class BaseEditViewGroup @JvmOverloads constructor(
         return true
     }
 
+
+    private var centerPoint: Point? = null
+    private val preTouchPoint: Point by lazy { Point(0, 0) }
+    private var preDistance: Int = 0
+    private var preAngle: Float = 0f
+    private val curTouchPoint: Point by lazy { Point(0, 0) }
+    private var curDistance: Int = 0
+    private var curAngle: Float = 0f
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         var result = true
         kotlin.runCatching {
             if (selectViewNew != null) {
-                result = scaleGestureDetector.onTouchEvent(event)
-                rotationGestureDetector.onTouchEvent(event)
                 if (selectViewNew?.currentEditType == null) {
                     if (event.pointerCount == 1) {
                         viewDragHelper.processTouchEvent(event)
                     } else {
                         viewDragHelper.cancel()
+                    }
+                    scaleGestureDetector.onTouchEvent(event)
+                    rotationGestureDetector.onTouchEvent(event)
+                } else {
+                    // 只允许单指操控
+                    if (event.pointerCount == 1) {
+                        val type = requireNotNull(selectViewNew?.currentEditType)
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_DOWN -> {
+                                when (type) {
+                                    EditType.Adjust -> {
+                                        selectViewNew?.run {
+                                            preTouchPoint.x = event.x.toInt()
+                                            preTouchPoint.y = event.y.toInt()
+                                            centerPoint = outerCenterPoint
+                                            preDistance =
+                                                calculateDistance(preTouchPoint, centerPoint!!)
+                                            preAngle = calculateAngle(preTouchPoint, centerPoint!!)
+                                        }
+                                        log("adjust start")
+                                    }
+                                }
+                            }
+                            MotionEvent.ACTION_MOVE -> {
+                                when (type) {
+                                    EditType.Adjust -> {
+                                        selectViewNew?.run {
+                                            curTouchPoint.x = event.x.toInt()
+                                            curTouchPoint.y = event.y.toInt()
+                                            curDistance =
+                                                calculateDistance(curTouchPoint, centerPoint!!)
+                                            val scaleDelta =
+                                                (1f * curDistance / (diagonal / 2f)) - 1
+                                            this.scale += scaleDelta
+
+//                                            curAngle = calculateAngle(curTouchPoint, centerPoint!!)
+//                                            val deltaAngle = toDegrees(preAngle - curAngle.toDouble())
+//                                            angle += deltaAngle.toFloat()
+                                        }
+                                        log("adjusting")
+                                    }
+                                }
+                            }
+                            MotionEvent.ACTION_UP -> {
+                                val newType = selectViewNew?.let {
+                                    it.isEditButtonUnder(event, it.outerCenterPoint)
+                                }
+                                log("type: $type newType $newType")
+                                when (type) {
+                                    EditType.Delete -> {
+                                        if (type == newType) {
+                                            log("delete click")
+                                        }
+                                    }
+                                    EditType.Edit -> {
+                                        if (type == newType) {
+                                            log("edit click")
+                                        }
+                                    }
+                                    EditType.Custom -> {
+                                        if (type == newType) {
+                                            log("custom click")
+                                        }
+                                    }
+                                    EditType.Adjust -> {
+                                        selectViewNew?.run {
+                                            centerPoint = null
+                                            preTouchPoint.set(0, 0)
+                                            curTouchPoint.set(0, 0)
+                                            curDistance = 0
+                                            preDistance = 0
+                                            curAngle = 0f
+                                            preAngle = 0f
+                                        }
+                                        log("adjust finish")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

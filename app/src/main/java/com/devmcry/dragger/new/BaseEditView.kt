@@ -24,6 +24,18 @@ open class BaseEditView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
+    val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
+    val diagonal: Int
+        get() = hypot(
+            size[0].toFloat(),
+            size[1].toFloat()
+        ).toInt()
+    val outerCenterPoint
+        get() = innerCenterPoint.apply {
+            x += left
+            y += top
+        }
+
     var contentView: View?
         get() = if (childCount > 0) getChildAt(0) else null
         set(value) {
@@ -39,37 +51,51 @@ open class BaseEditView @JvmOverloads constructor(
             }
         }
 
+    private var originWidth: Int = 0
+    private var originHeight: Int = 0
+
+    companion object {
+        private const val MIN_SCALE = 0.5f
+        private const val MAX_SCALE = 1.5f
+    }
+
+    /* transform */
     var angle: Float
         get() = rotation
         set(value) {
             rotation = value
+            requestLayout()
             invalidate()
         }
 
-    var size: IntArray
-        get() = intArrayOf(measuredWidth, measuredHeight)
-        set(value) {
-            contentView?.updateLayoutParams {
-                width = value[0]
-                height = value[1]
-            }
-        }
-
-    private var originWidth: Int = 0
-    private var originHeight: Int = 0
-
     var scale: Float = 1f
         set(value) {
-            field = value.coerceAtLeast(0.5f).coerceAtMost(1.5f)
+            field = value.coerceAtLeast(MIN_SCALE).coerceAtMost(MAX_SCALE)
+            val newWidth = (originWidth * field).toInt()
+            val newHeight = (originHeight * field).toInt()
+            size = intArrayOf(newWidth, newHeight)
+        }
+
+    var size: IntArray
+        get() = intArrayOf(
+            contentView?.layoutParams?.width ?: 0,
+            contentView?.layoutParams?.height ?: 0
+        )
+        set(value) {
             contentView?.updateLayoutParams {
-                val newWidth = (originWidth * field).toInt()
-                val newHeight = (originHeight * field).toInt()
+                val newWidth = value[0].coerceAtLeast((originWidth * MIN_SCALE).toInt())
+                    .coerceAtMost((originWidth * MAX_SCALE).toInt())
+                val newHeight = value[1].coerceAtLeast((originHeight * MIN_SCALE).toInt())
+                    .coerceAtMost((originHeight * MAX_SCALE).toInt())
                 offsetLeftAndRight((width - newWidth) / 2)
                 offsetTopAndBottom((height - newHeight) / 2)
                 width = newWidth
                 height = newHeight
             }
+            invalidate()
+            requestLayout()
         }
+    /* transform */
 
     init {
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
@@ -107,8 +133,6 @@ open class BaseEditView @JvmOverloads constructor(
             field = value
             invalidate()
         }
-
-    val innerCenterPoint get() = Point(measuredWidth / 2, measuredHeight / 2)
 
     private val paint: Paint = Paint().apply {
         color = Color.RED
@@ -169,21 +193,31 @@ open class BaseEditView @JvmOverloads constructor(
 
     fun tryInterceptTouchEvent(event: MotionEvent, centerPoint: Point): Boolean {
         // edit buttons or content view
-        return isEditButtonUnder(event, centerPoint) || isContentViewUnder(event, centerPoint)
+        var contentViewUnder = false
+        currentEditType = isEditButtonUnder(event, centerPoint)
+        // 如果未命中顶点再判断是否命中内部区域
+        if (currentEditType == null) {
+            contentViewUnder = isContentViewUnder(event, centerPoint)
+            if (contentViewUnder) {
+                Log.d("===", "${this.id} content touch")
+            }
+        }
+        return currentEditType != null || contentViewUnder
     }
 
-    private fun isEditButtonUnder(event: MotionEvent, centerPoint: Point): Boolean {
-        var result = false
-        getEditPoints(centerPoint)
-            .forEachIndexed { index, point ->
-                val touchPoint = Point(event.x.toInt(), event.y.toInt())
-                val distance = calculateDistance(touchPoint, point)
-                if (distance < radius) {
-                    result = true
-                    currentEditType = editButtonList[index]
-                    Log.d("===", "${this.id} ${editButtonList[index]} touch")
+    fun isEditButtonUnder(event: MotionEvent, centerPoint: Point): EditType? {
+        var result: EditType? = null
+        kotlin.run breaking@{
+            getEditPoints(centerPoint)
+                .forEachIndexed { index, point ->
+                    val touchPoint = Point(event.x.toInt(), event.y.toInt())
+                    val distance = calculateDistance(touchPoint, point)
+                    if (distance < radius) {
+                        result = editButtonList[index]
+                        return@breaking
+                    }
                 }
-            }
+        }
         return result
     }
 
@@ -198,7 +232,7 @@ open class BaseEditView @JvmOverloads constructor(
      *
      * (p1 p2 X p1 p ) * (p3 p4 X p3 p)  >= 0  && (p2 p3 X p2 p ) * (p4 p1 X p4 p) >= 0
      */
-    private fun isContentViewUnder(event: MotionEvent, centerPoint: Point): Boolean {
+    fun isContentViewUnder(event: MotionEvent, centerPoint: Point): Boolean {
         fun getCross(firstPoint: Point, secondPoint: Point, targetPoint: Point): Float {
             return 1f * (secondPoint.x - firstPoint.x) * (targetPoint.y - firstPoint.y) - 1f * (targetPoint.x - firstPoint.x) * (secondPoint.y - firstPoint.y)
         }
@@ -207,10 +241,6 @@ open class BaseEditView @JvmOverloads constructor(
         val (p1, p2, p3, p4) = getEditPoints(centerPoint)
         val result = getCross(p1, p2, point) * getCross(p3, p4, point) >= 0 &&
                 getCross(p2, p3, point) * getCross(p4, p1, point) >= 0
-        if (result) {
-            currentEditType = null
-            Log.d("===", "${this.id} content touch")
-        }
         return result
     }
 
@@ -218,34 +248,35 @@ open class BaseEditView @JvmOverloads constructor(
         centerPoint: Point = this.innerCenterPoint,
         calculateRotate: Boolean = true
     ): List<Point> {
+        val contentSize = size
         return editButtonList.map {
             when (it) {
                 // top left
                 EditType.Delete -> {
                     Point(
-                        centerPoint.x - contentView!!.measuredWidth / 2,
-                        centerPoint.y - contentView!!.measuredHeight / 2
+                        centerPoint.x - contentSize[0] / 2,
+                        centerPoint.y - contentSize[1] / 2
                     )
                 }
                 // top right
                 EditType.Edit -> {
                     Point(
-                        centerPoint.x + contentView!!.measuredWidth / 2,
-                        centerPoint.y - contentView!!.measuredHeight / 2
+                        centerPoint.x + contentSize[0] / 2,
+                        centerPoint.y - contentSize[1] / 2
                     )
                 }
                 // bottom right
                 EditType.Adjust -> {
                     Point(
-                        centerPoint.x + contentView!!.measuredWidth / 2,
-                        centerPoint.y + contentView!!.measuredHeight / 2
+                        centerPoint.x + contentSize[0] / 2,
+                        centerPoint.y + contentSize[1] / 2
                     )
                 }
                 // bottom left
                 EditType.Custom -> {
                     Point(
-                        centerPoint.x - contentView!!.measuredWidth / 2,
-                        centerPoint.y + contentView!!.measuredHeight / 2
+                        centerPoint.x - contentSize[0] / 2,
+                        centerPoint.y + contentSize[1] / 2
                     )
                 }
             }
@@ -258,14 +289,14 @@ open class BaseEditView @JvmOverloads constructor(
         }
     }
 
-    private fun calculateDistance(touchPoint: Point, targetPoint: Point): Int {
+    fun calculateDistance(touchPoint: Point, targetPoint: Point): Int {
         return hypot(
             touchPoint.x.toFloat() - targetPoint.x.toFloat(),
             touchPoint.y.toFloat() - targetPoint.y.toFloat()
         ).toInt()
     }
 
-    private fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
+    fun calculateAngle(startPoint: Point, targetPoint: Point): Float {
         return atan2(startPoint.x - targetPoint.x.toFloat(), startPoint.y - targetPoint.y.toFloat())
     }
 
