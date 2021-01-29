@@ -1,4 +1,4 @@
-package com.devmcry.dragger;
+package com.devmcry.dragger.ui;
 
 import android.view.MotionEvent;
 

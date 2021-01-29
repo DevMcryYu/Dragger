@@ -1,4 +1,4 @@
-package com.devmcry.dragger.new
+package com.devmcry.dragger.ui
 
 import android.content.Context
 import android.graphics.Point
@@ -9,7 +9,6 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.core.view.children
 import androidx.customview.widget.ViewDragHelper
-import com.devmcry.dragger.RotationGestureDetector
 import java.lang.Math.toDegrees
 import kotlin.math.atan2
 import kotlin.math.hypot
@@ -25,6 +24,8 @@ abstract class BaseEditViewContainer @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr), EditCallback {
     protected var currentEditView: BaseEditView? = null
+
+    val isEditing get() = currentEditView != null
     private val viewDragHelper: ViewDragHelper by lazy {
         ViewDragHelper.create(
             this,
@@ -138,9 +139,10 @@ abstract class BaseEditViewContainer @JvmOverloads constructor(
                 }
                 if (!captured) {
                     currentEditView?.run {
-                        onUnSelected(this)
+                        val tempView = this
+                        currentEditView = null
+                        onUnSelected(tempView)
                     }
-                    currentEditView = null
                 }
             }
         }

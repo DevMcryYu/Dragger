@@ -1,18 +1,14 @@
-package com.devmcry.dragger.new
+package com.devmcry.dragger.ui
 
 import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
 import android.util.AttributeSet
-import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
-import com.devmcry.dragger.DecorLayerTransformer
-import com.devmcry.dragger.PosTransHelper
 import com.devmcry.dragger.R
-import com.devmcry.dragger.model.DecorLayer
 import kotlin.math.roundToInt
 
 /**
@@ -24,21 +20,41 @@ class DecorContainer @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : BaseEditViewContainer(context, attrs, defStyleAttr), DecorLayerTransformer {
+) : BaseEditViewContainer(context, attrs, defStyleAttr), DecorLayerTransformer<Any> {
+    var onResize: (List<Any>) -> Unit = {}
+    var onSelect: (Any) -> Unit = {}
+    var onUnSelect: (Any, Boolean) -> Unit = { _, _ -> }
+
+    private val centerPoint: Point
+        get() = Point(
+            (this.width / 2f).roundToInt(),
+            (this.height / 2f).roundToInt()
+        )
+
+    private val decorViewMap: MutableMap<BaseEditView, Any> by lazy { mutableMapOf() }
 
     private val drawable by lazy {
         ResourcesCompat.getDrawable(
             resources,
-            R.drawable.ic_launcher_foreground,
+            R.color.teal_200,
             context.theme
         )
     }
 
     override fun onSelected(view: BaseEditView) {
         (view.contentView as ImageView).setImageDrawable(drawable)
+        decorViewMap[view]?.let {
+            onSelect(it)
+        }
     }
 
     override fun onUnSelected(view: BaseEditView) {
+        if (!isEditing) {
+            Toast.makeText(context, "all clear", Toast.LENGTH_SHORT).show()
+        }
+        decorViewMap[view]?.let {
+            onUnSelect(it, !isEditing)
+        }
         (view.contentView as ImageView).setImageDrawable(null)
     }
 
@@ -46,26 +62,32 @@ class DecorContainer @JvmOverloads constructor(
         Toast.makeText(context, "$type click", Toast.LENGTH_SHORT).show()
     }
 
+
+    private fun newChildPos(size: IntArray): IntArray {
+        return intArrayOf((this.width - size[0]) / 2, (this.height - size[1]) / 2)
+    }
+
     override fun onFinishInflate() {
         super.onFinishInflate()
-        val view = DecorEditView(context).apply {
-            val content = ImageView(context)
-            content.layoutParams = LayoutParams(300, 600)
-            content.background =
-                ResourcesCompat.getDrawable(resources, R.color.teal_700, context.theme)
-            contentView = content
-            angle = 0f
+        post {
+            kotlin.runCatching {
+                val v = DecorEditView(context).apply {
+                    val content = ImageView(context)
+                    content.layoutParams = LayoutParams(400, 500)
+                    background = ResourcesCompat.getDrawable(
+                        resources,
+                        R.color.teal_700,
+                        context.theme
+                    )
+                    contentView = content
+                    angle = 0f
+                    val pos = newChildPos(size)
+                    left = pos[0]
+                    top = pos[1]
+                }
+                addView(v)
+            }
         }
-        addView(view)
-        val view1 = DecorEditView(context).apply {
-            val content = ImageView(context)
-            content.layoutParams = LayoutParams(400, 400)
-            content.background =
-                ResourcesCompat.getDrawable(resources, R.color.teal_200, context.theme)
-            contentView = content
-            angle = 0f
-        }
-        addView(view1)
     }
 
     fun setSize(width: Int, height: Int) {
@@ -77,6 +99,7 @@ class DecorContainer @JvmOverloads constructor(
             layoutParams = LayoutParams(width, height)
         }
         restore(pointList)
+        post { onResize(export()) }
     }
 
     override fun save(): List<Pair<BaseEditView, PointF>> {
@@ -107,18 +130,11 @@ class DecorContainer @JvmOverloads constructor(
         requestLayout()
     }
 
-    override fun export(): List<DecorLayer> {
-        val dstCenterPoint = Point((this.width / 2f).roundToInt(), (this.height / 2f).roundToInt())
-        return children
-            .filter { it is BaseEditView }
-            .map { it as BaseEditView }
-            .mapIndexed { index, view ->
-                DecorLayer().apply {
-                    level = index
-                    pack = "sticker1"
-                    PosTransHelper.viewToVertex(view, dstCenterPoint).copyInto(vertex)
-                }
+    override fun export(): List<Any> {
+        return decorViewMap.entries
+            .sortedByDescending { indexOfChild(it.key) }
+            .mapIndexed { index, entry ->
+                entry.value
             }.toList()
     }
-
 }

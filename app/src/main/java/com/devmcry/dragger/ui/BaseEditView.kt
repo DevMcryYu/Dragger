@@ -1,15 +1,18 @@
-package com.devmcry.dragger.new
+package com.devmcry.dragger.ui
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.updateLayoutParams
-import com.devmcry.dragger.PosTransHelper
+import com.devmcry.dragger.R
 import kotlin.math.hypot
 
 /**
@@ -117,14 +120,31 @@ open class BaseEditView @JvmOverloads constructor(
         }
     }
 
-    private val radius = 48
+    private val radius = 24.dp
 
+    private val iconDelete: Bitmap? by lazy {
+        ResourcesCompat.getDrawable(
+            resources,
+            R.drawable.icon_edit_delete,
+            context.theme
+        )?.toBitmap(radius, radius)
+    }
+
+    private val iconAdjust: Bitmap? by lazy {
+        ResourcesCompat.getDrawable(
+            resources,
+            R.drawable.icon_edit_adjust,
+            context.theme
+        )?.toBitmap(radius, radius)
+    }
+
+    // 通过调整 enable 来开启
     private val editButtonList: List<EditType> by lazy {
         listOf(
             EditType.Delete,
-            EditType.Edit,
+            EditType.Edit.apply { enable = false },
             EditType.Adjust,
-            EditType.Custom.apply { enable = false },
+            EditType.Custom.apply { enable = false }
         )
     }
     var currentEditType: EditType? = null
@@ -135,21 +155,16 @@ open class BaseEditView @JvmOverloads constructor(
             invalidate()
         }
 
-    private val paint: Paint = Paint().apply {
-        color = Color.RED
-        strokeWidth = 1f
+    private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        isFilterBitmap = true
+        isDither = true
     }
-
-    private val adjustPaint: Paint = Paint().apply {
-        color = Color.YELLOW
-        strokeWidth = 1f
-    }
-
 
     private val linePath = Path()
     private val linePaint: Paint = Paint().apply {
         color = Color.WHITE
         isAntiAlias = true
+        isDither = true
         style = Paint.Style.STROKE
         strokeWidth = 2f
     }
@@ -174,20 +189,24 @@ open class BaseEditView @JvmOverloads constructor(
                 if (button.enable) {
                     when (button) {
                         EditType.Adjust -> {
-                            canvas?.drawCircle(
-                                point.x.toFloat(),
-                                point.y.toFloat(),
-                                radius.toFloat(),
-                                adjustPaint
-                            )
+                            iconAdjust?.let {
+                                canvas?.drawBitmap(
+                                    it,
+                                    point.x.toFloat() - it.width / 2f,
+                                    point.y.toFloat() - it.height / 2f,
+                                    iconPaint
+                                )
+                            }
                         }
                         else -> {
-                            canvas?.drawCircle(
-                                point.x.toFloat(),
-                                point.y.toFloat(),
-                                radius.toFloat(),
-                                paint
-                            )
+                            iconDelete?.let {
+                                canvas?.drawBitmap(
+                                    it,
+                                    point.x.toFloat() - it.width / 2f,
+                                    point.y.toFloat() - it.height / 2f,
+                                    iconPaint
+                                )
+                            }
                         }
                     }
                 }
@@ -202,9 +221,6 @@ open class BaseEditView @JvmOverloads constructor(
         // 如果未命中顶点再判断是否命中内部区域
         if (currentEditType == null) {
             contentViewUnder = isContentViewUnder(event, centerPoint)
-            if (contentViewUnder) {
-                Log.d("===", "${this.id} content touch")
-            }
         }
         return currentEditType != null || contentViewUnder
     }
@@ -299,4 +315,18 @@ open class BaseEditView @JvmOverloads constructor(
             }
         }
     }
+
+    private val Int.dp
+        get() = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            this.toFloat(),
+            Resources.getSystem().displayMetrics
+        ).toInt()
+
+    private val Int.sp
+        get() = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP,
+            this.toFloat(),
+            Resources.getSystem().displayMetrics
+        ).toInt()
 }

@@ -1,4 +1,4 @@
-package com.devmcry.dragger.new
+package com.devmcry.dragger.ui
 
 import android.content.Context
 import android.util.AttributeSet

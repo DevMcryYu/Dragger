@@ -1,11 +1,8 @@
-package com.devmcry.dragger
+package com.devmcry.dragger.ui
 
 import android.graphics.Point
 import android.graphics.PointF
-import android.view.View
 import androidx.core.graphics.toPointF
-import com.devmcry.dragger.new.BaseEditView
-import com.devmcry.dragger.model.DecorLayer
 import java.lang.Math.toRadians
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -16,14 +13,13 @@ import kotlin.math.sin
  *  @date : 2020/12/18 17:51
  *  @description :
  */
-
-interface DecorLayerTransformer {
+interface DecorLayerTransformer<T> {
 
     fun save(): List<Pair<BaseEditView, PointF>>
 
     fun restore(decorList: List<Pair<BaseEditView, PointF>>)
 
-    fun export(): List<DecorLayer>
+    fun export(): List<T>
 }
 
 object PosTransHelper {
@@ -101,16 +97,17 @@ object PosTransHelper {
         return floatArrayOf(transRotatedPoint.x, transRotatedPoint.y)
     }
 
-    fun viewToVertex(view: View, centerPoint: Point): FloatArray {
-        val angle = view.rotation
-        val vp0 = Point(view.left + view.width, view.top)
-        val vp1 = Point(view.left + view.width, view.top + view.height)
-        val vp2 = Point(view.left, view.top + view.height)
+    fun viewToVertex(view: BaseEditView, centerPoint: Point): FloatArray {
+        val angle = view.angle
+        val size = view.size
+        val vp0 = Point(view.left + size[0], view.top)
+        val vp1 = Point(view.left + size[0], view.top + size[1])
+        val vp2 = Point(view.left, view.top + size[1])
         val vp3 = Point(view.left, view.top)
 
         val viewCenterPoint = Point(
-            (view.left + view.width / 2f).roundToInt(),
-            (view.top + view.height / 2f).roundToInt()
+            (view.left + size[0] / 2f).roundToInt(),
+            (view.top + size[1] / 2f).roundToInt()
         )
         return pointToVertex(vp0, viewCenterPoint, angle, centerPoint) +
                 pointToVertex(vp1, viewCenterPoint, angle, centerPoint) +
